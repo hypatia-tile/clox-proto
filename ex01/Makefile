@@ -8,7 +8,8 @@ SRC_DIR = src
 SRC_FILES = $(wildcard $(SRC_DIR)/*.c)
 SRC_FILES = $(SRC_DIR)/main.c \
             $(SRC_DIR)/chunk.c \
-            $(SRC_DIR)/memory.c
+            $(SRC_DIR)/memory.c \
+            $(SRC_DIR)/debug.c
 
 TARGET = $(BIN_DIR)/ex01
 
@@ -17,6 +18,10 @@ INC_DIR = ./include
 all: $(SRC_DIR)
 	@mkdir -p $(BIN_DIR)
 	@$(CC) -I$(INC_DIR) $(CFLAGS) -o $(BIN_DIR)/ex01 $(SRC_FILES)
+
+debug: $(SRC_DIR)
+	@mkdir -p $(BIN_DIR)
+	@$(CC) -I$(INC_DIR) $(CFLAGS) -o $(BIN_DIR)/ex01 $(SRC_FILES) -v
 
 run: all
 	@./$(BIN_DIR)/ex01

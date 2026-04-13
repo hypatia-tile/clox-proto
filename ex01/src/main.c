@@ -1,13 +1,11 @@
-#include "common.h"
 #include "chunk.h"
+#include "debug.h"
 
 int main(void) {
   Chunk chunk;
   initChunk(&chunk);
   writeChunk(&chunk, OP_RETURN);
-  for (size_t i = 0; i < sizeof(chunk.code); i++) {
-    printf("%hhu", (chunk.code)[i]);
-  }
+  disassembleChunk(&chunk, "test chunk");
   freeChunk(&chunk);
   return 0;
 }
