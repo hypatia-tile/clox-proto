@@ -35,6 +35,9 @@ static char *readFile(const char *path) {
 
   char *buffer = (char *)malloc(fileSize + 1);
   size_t byteRead = fread(buffer, sizeof(char), fileSize, file);
+  if (byteRead < fileSize) {
+    fprintf(stderr, "Could not read file \"%s\".\n", path);
+  }
   buffer[byteRead] = '\0';
 
   fclose(file);
