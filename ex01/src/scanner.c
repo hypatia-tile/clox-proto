@@ -19,6 +19,8 @@ void initScanner(const char *source) {
   scanner.line = 1;
 }
 
+static bool isDigit(char c) { return c >= '0' && c <= '9'; }
+
 static bool isAtEnd() { return *scanner.current == '\0'; }
 
 static char advance() {
@@ -30,7 +32,7 @@ static char peek() { return *scanner.current; };
 static char peekNext() {
   if (isAtEnd())
     return '\0';
-  return scanner.current[0];
+  return scanner.current[1];
 };
 
 static bool match(char expected) {
@@ -87,6 +89,36 @@ static void skipWhitespace() {
   }
 }
 
+static Token number() {
+  while (isDigit(peek()))
+    advance();
+
+  // Look for a fractional part.
+  if (peek() == '.' && isDigit(peekNext())) {
+    // Consume the "."
+    advance();
+
+    while (isDigit(peek()))
+      advance();
+  }
+
+  return makeToken(TOKEN_NUMBER);
+}
+
+static Token string() {
+  while (peek() != '"' && !isAtEnd()) {
+    if (peek() == '\n')
+      scanner.line++;
+    advance();
+  }
+
+  if (isAtEnd())
+    return errorToken("Unterminated string.");
+  // The closing quote
+  advance();
+  return makeToken(TOKEN_STRING);
+}
+
 Token scanToken() {
   skipWhitespace();
   scanner.start = scanner.current;
@@ -95,6 +127,9 @@ Token scanToken() {
     return makeToken(TOKEN_EOF);
 
   char c = advance();
+
+  if (isDigit(c))
+    return number();
 
   switch (c) {
   case '(':
@@ -127,6 +162,8 @@ Token scanToken() {
     return makeToken(match('=') ? TOKEN_LESS_EQUAL : TOKEN_LESS);
   case '>':
     return makeToken(match('=') ? TOKEN_GREATER_EQUAL : TOKEN_GREATER);
+  case '"':
+    return string();
   }
 
   return errorToken("Unexpected character");
