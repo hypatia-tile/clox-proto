@@ -207,7 +207,7 @@ static void parsePrecedence(Precedence precedence) {
   }
 }
 
-static ParseRule *getRule(TokenType type) { return &rules[type]; }
+static ParseRule *getRule(TokenType type) { return (ParseRule*) &rules[type]; }
 
 static void binary() {
   TokenType operatorType = parser.previous.type;
