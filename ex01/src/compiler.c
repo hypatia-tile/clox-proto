@@ -46,7 +46,7 @@ typedef struct {
   Precedence precedence;
 } ParseRule;
 
-static ParseRule *getRule(TokenType type);
+static const ParseRule *getRule(TokenType type);
 
 static Parser parser;
 
@@ -147,7 +147,7 @@ static void unary() {
   }
 }
 
-static ParseRule rules[] = {
+static const ParseRule rules[] = {
     [TOKEN_LEFT_PAREN] = {grouping, NULL, PREC_NONE},
     [TOKEN_RIGHT_PAREN] = {NULL, NULL, PREC_NONE},
     [TOKEN_LEFT_BRACE] = {NULL, NULL, PREC_NONE},
@@ -207,11 +207,11 @@ static void parsePrecedence(Precedence precedence) {
   }
 }
 
-static ParseRule *getRule(TokenType type) { return &rules[type]; }
+static const ParseRule *getRule(TokenType type) { return &rules[type]; }
 
 static void binary() {
   TokenType operatorType = parser.previous.type;
-  ParseRule *rule = getRule(operatorType);
+  const ParseRule *rule = getRule(operatorType);
   parsePrecedence((Precedence)(rule->precedence + 1));
 
   switch (operatorType) {
