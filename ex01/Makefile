@@ -49,7 +49,7 @@ repl: $(TARGET)
 	@./$<
 
 clean:
-	@rm -rf $(BIN_DIR) $(OBJ_DIR)
+	@rm -rf $(BIN_DIR) $(OBJ_DIR) $(TEST_OBJ_DIR) $(TEST_BIN_DIR)
 
 .PHONY: all run clean test
 
