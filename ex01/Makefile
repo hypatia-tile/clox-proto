@@ -21,7 +21,7 @@ TEST_TARGET = $(TEST_BIN_DIR)/test_ex01
 
 INC_DIR = ./include
 
-all: $(TARGET) $(TEST_TARGET)
+all: $(TARGET)
 
 $(TARGET): $(OBJ_FILES)
 	@mkdir -p $(BIN_DIR)
