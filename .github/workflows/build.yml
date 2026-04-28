@@ -1,0 +1,29 @@
+name: C build
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./ex01
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build
+        run: make
+
+      - name: Run test
+        run: make test
+
+      - name: Run executable
+        run: make run
+
+      - name: Clean
+        run: make clean
