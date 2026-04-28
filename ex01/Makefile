@@ -1,6 +1,8 @@
 CC = clang
 CFLAGS = -Wall -Wextra -Werror -std=c11
 
+inputfile := example/test.txt
+
 SRC_DIR = src
 OBJ_DIR = obj
 BIN_DIR = bin
@@ -41,6 +43,9 @@ test: $(TEST_TARGET)
 	@./$<
 
 run: $(TARGET)
+	@./$< $(inputfile)
+
+repl: $(TARGET)
 	@./$<
 
 clean:
