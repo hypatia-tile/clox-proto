@@ -147,7 +147,7 @@ static void unary() {
   }
 }
 
-static const ParseRule rules[] = {
+static ParseRule rules[] = {
     [TOKEN_LEFT_PAREN] = {grouping, NULL, PREC_NONE},
     [TOKEN_RIGHT_PAREN] = {NULL, NULL, PREC_NONE},
     [TOKEN_LEFT_BRACE] = {NULL, NULL, PREC_NONE},
@@ -207,7 +207,7 @@ static void parsePrecedence(Precedence precedence) {
   }
 }
 
-static ParseRule *getRule(TokenType type) { return (ParseRule*) &rules[type]; }
+static ParseRule *getRule(TokenType type) { return &rules[type]; }
 
 static void binary() {
   TokenType operatorType = parser.previous.type;
