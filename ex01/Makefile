@@ -1,5 +1,6 @@
 CC = clang
 CFLAGS = -Wall -Wextra -Werror -std=c11
+DEBUG_FLAGS = -g -O0
 
 inputfile := example/test.txt
 
@@ -9,6 +10,10 @@ BIN_DIR = bin
 SRC_FILES = $(wildcard $(SRC_DIR)/*.c)
 OBJ_FILES = $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SRC_FILES))
 APP_OBJ = $(OBJ_DIR)/main.o
+DEBUG_OBJ_DIR = debug/obj
+DEBUG_BIN_DIR = debug/bin
+DEBUG_OBJ_FILES = $(patsubst $(SRC_DIR)/%.c,$(DEBUG_OBJ_DIR)/%.o,$(SRC_FILES))
+DEBUG_TARGET = $(DEBUG_BIN_DIR)/ex01
 TEST_SRC_DIR = test/src
 TEST_OBJ_DIR = test/obj
 TEST_BIN_DIR = test/bin
@@ -23,6 +28,10 @@ INC_DIR = ./include
 
 all: $(TARGET)
 
+$(DEBUG_TARGET): $(DEBUG_OBJ_FILES)
+	@mkdir -p $(DEBUG_BIN_DIR)
+	@$(CC) $(DEBUG_FLAGS) -o $@ $^
+
 $(TARGET): $(OBJ_FILES)
 	@mkdir -p $(BIN_DIR)
 	@$(CC) -o $@ $^
@@ -30,6 +39,10 @@ $(TARGET): $(OBJ_FILES)
 $(TEST_TARGET): $(TEST_OBJ_FILES)
 	@mkdir -p $(TEST_BIN_DIR)
 	@$(CC) -o $@ $^
+
+$(DEBUG_OBJ_DIR)/%.o: $(SRC_DIR)/%.c
+	@mkdir -p $(DEBUG_OBJ_DIR)
+	@$(CC) -c -I$(INC_DIR) $(CFLAGS) $(DEBUG_FLAGS) -o $@ $<
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(OBJ_DIR)
@@ -40,7 +53,10 @@ $(TEST_OBJ_DIR)/%.o: $(TEST_SRC_DIR)/%.c
 	@$(CC) -c -I$(INC_DIR) $(CFLAGS) -o $@ $<
 
 test: $(TEST_TARGET)
-	@./$<
+	@$<
+
+debug: $(DEBUG_TARGET)
+	@lldb $<
 
 run: $(TARGET)
 	@./$< $(inputfile)
@@ -49,7 +65,8 @@ repl: $(TARGET)
 	@./$<
 
 clean:
-	@rm -rf $(BIN_DIR) $(OBJ_DIR) $(TEST_OBJ_DIR) $(TEST_BIN_DIR)
+	@rm -rf $(BIN_DIR) $(OBJ_DIR) $(TEST_OBJ_DIR) $(TEST_BIN_DIR) \
+		$(DEBUG_OBJ_DIR) $(DEBUG_BIN_DIR)
 
-.PHONY: all run clean test repl
+.PHONY: all run clean test repl debug
 
