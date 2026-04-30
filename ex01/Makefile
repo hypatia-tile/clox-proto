@@ -42,7 +42,7 @@ $(TEST_TARGET): $(TEST_OBJ_FILES)
 
 $(DEBUG_OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(DEBUG_OBJ_DIR)
-	@$(CC) -c -I$(INC_DIR) $(DEBUG_FLAGS) -o $@ $<
+	@$(CC) -c -I$(INC_DIR) $(CFLAGS) $(DEBUG_FLAGS) -o $@ $<
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(OBJ_DIR)
