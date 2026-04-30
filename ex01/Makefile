@@ -30,7 +30,7 @@ all: $(TARGET)
 
 $(DEBUG_TARGET): $(DEBUG_OBJ_FILES)
 	@mkdir -p $(DEBUG_BIN_DIR)
-	@$(CC) -o $@ $^
+	@$(CC) $(DEBUG_FLAGS) -o $@ $^
 
 $(TARGET): $(OBJ_FILES)
 	@mkdir -p $(BIN_DIR)
