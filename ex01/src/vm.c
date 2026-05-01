@@ -2,8 +2,8 @@
 #include "chunk.h"
 #include "compiler.h"
 #include "debug.h"
-#include "stdbool.h"
-#include "stdio.h"
+#include <stdbool.h>
+#include <stdio.h>
 #include <stdarg.h>
 
 #include "common.h"
