@@ -2,9 +2,9 @@
 #include "chunk.h"
 #include "compiler.h"
 #include "debug.h"
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include <stdarg.h>
 
 #include "common.h"
 #include "value.h"
@@ -96,6 +96,15 @@ static InterpretResult run() {
       push(constant);
       break;
     }
+    case OP_NIL:
+      push(NIL_VAL);
+      break;
+    case OP_TRUE:
+      push(BOOL_VAL(true));
+      break;
+    case OP_FALSE:
+      push(BOOL_VAL(false));
+      break;
     }
   }
 #undef READ_BYTE
