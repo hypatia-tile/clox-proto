@@ -45,11 +45,11 @@ int test_binary() {
   Chunk expected;
   initChunk(&expected);
   writeChunk(&expected, OP_CONSTANT, 1);
-  int rhs = addConstant(&expected, NUMBER_VAL(1));
-  writeChunk(&expected, rhs, 1);
-  writeChunk(&expected, OP_CONSTANT, 1);
-  int lhs = addConstant(&expected, NUMBER_VAL(2));
+  int lhs = addConstant(&expected, NUMBER_VAL(1));
   writeChunk(&expected, lhs, 1);
+  writeChunk(&expected, OP_CONSTANT, 1);
+  int rhs = addConstant(&expected, NUMBER_VAL(2));
+  writeChunk(&expected, rhs, 1);
   writeChunk(&expected, OP_ADD, 1);
   writeChunk(&expected, OP_RETURN, 1);
 
