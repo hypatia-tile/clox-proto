@@ -1,5 +1,6 @@
 #include "compiler.h"
 #include "value.h"
+#include <stdio.h>
 
 static int fail(const char *message) {
   fprintf(stderr, "Test failed: %s\n", message);
