@@ -145,6 +145,7 @@ static void unary() {
     break;
   case TOKEN_BANG:
     emitByte(OP_NOT);
+    break;
   default:
     return; // Unreachable.
   }
