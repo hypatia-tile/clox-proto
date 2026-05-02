@@ -25,6 +25,7 @@ TARGET = $(BIN_DIR)/ex01
 TEST_TARGET = $(TEST_BIN_DIR)/test_ex01
 
 INC_DIR = ./include
+TEST_INC_DIR = ./test/include
 
 all: $(TARGET)
 
@@ -50,7 +51,7 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 
 $(TEST_OBJ_DIR)/%.o: $(TEST_SRC_DIR)/%.c
 	@mkdir -p $(TEST_OBJ_DIR)
-	@$(CC) -c -I$(INC_DIR) $(CFLAGS) -o $@ $<
+	@$(CC) -c -I$(INC_DIR) -I$(TEST_INC_DIR) $(CFLAGS) -o $@ $<
 
 test: $(TEST_TARGET)
 	@$<
