@@ -15,6 +15,15 @@ static bool chunksEqual(Chunk *a, Chunk *b) {
       return false;
     }
   }
+  if (a->constants.count != b->constants.count ||
+      a->constants.capacity != b->constants.capacity) {
+    return false;
+  }
+  for (int i = 0; i < a->constants.count; i++) {
+    if (!valuesEqual(a->constants.values[i], b->constants.values[i])) {
+      return false;
+    }
+  }
   return true;
 }
 
