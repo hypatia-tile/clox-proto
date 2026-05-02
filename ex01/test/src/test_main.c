@@ -1,1 +1,4 @@
-int main(void) { return 0; }
+#include "test_compiler.h"
+int main(void) { 
+  return test_binary();
+}
