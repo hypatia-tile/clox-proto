@@ -2,10 +2,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "object.h"
 #include "chunk.h"
 #include "common.h"
 #include "compiler.h"
+#include "object.h"
 #include "scanner.h"
 
 #ifdef DEBUG_PRINT_CODE
@@ -286,7 +286,9 @@ static void number() {
 
 static void string() {
   emitConstant(OBJ_VAL(
-      copyString(parser.previous.start + 1, parser.previous.length - 2))); // trim the leading and trailing quotation marks.
+      copyString(parser.previous.start + 1,
+                 parser.previous.length -
+                     2))); // trim the leading and trailing quotation marks.
 }
 
 bool compile(const char *source, Chunk *chunk) {
