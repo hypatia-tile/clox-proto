@@ -59,7 +59,7 @@ static void runFile(const char *path) {
 
 int main(int argc, const char *argv[]) {
 
-  if (argc >= 2) {
+  if (argc > 2) {
     fprintf(stderr, "Usage: clox [path]\n");
     exit(64);
   }
