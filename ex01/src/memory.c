@@ -36,4 +36,5 @@ void freeObjects() {
     freeObject(object);
     object = next;
   }
+  vm.objects = NULL;
 }
