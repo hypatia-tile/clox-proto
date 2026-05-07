@@ -19,5 +19,6 @@ void initTable(Table *table);
 void freeTable(Table *table);
 /** Put entry into hash-table */
 bool tableSet(Table *table, ObjString *key, Value value);
+void tableAddAll(Table *from, Table *to);
 
 #endif // clox_table_h
