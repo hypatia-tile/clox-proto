@@ -17,5 +17,7 @@ typedef struct {
 
 void initTable(Table *table);
 void freeTable(Table *table);
+/** Put entry into hash-table */
+bool tableSet(Table *table, ObjString *key, Value value);
 
 #endif // clox_table_h
