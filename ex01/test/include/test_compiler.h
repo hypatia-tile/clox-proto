@@ -2,6 +2,7 @@
 #define test_clox_compiler_h
 #include "chunk.h"
 
-int test_binary();
+int test_exprstmt();
+int test_printstmt();
 
 #endif // test_clox_compiler_h
