@@ -51,9 +51,10 @@ int test_binary() {
   int rhs = addConstant(&expected, NUMBER_VAL(2));
   writeChunk(&expected, rhs, 1);
   writeChunk(&expected, OP_ADD, 1);
+  writeChunk(&expected, OP_POP, 1);
   writeChunk(&expected, OP_RETURN, 1);
 
-  int result = test_expr("1 + 2", &expected);
+  int result = test_expr("1 + 2;", &expected);
   freeChunk(&expected);
   return result;
 };
