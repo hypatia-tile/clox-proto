@@ -102,12 +102,11 @@ static void consume(TokenType type, const char *message) {
   errorAtCurrent(message);
 }
 
-static bool check(TokenType type) {
-  return parser.current.type == type;
-}
+static bool check(TokenType type) { return parser.current.type == type; }
 
 static bool match(TokenType type) {
-  if (!check(type)) return false;
+  if (!check(type))
+    return false;
   advance();
   return true;
 }
@@ -298,8 +297,33 @@ static void printStatement() {
   emitByte(OP_PRINT);
 }
 
+static void synchronize() {
+  parser.panicMode = false;
+
+  while (parser.current.type != TOKEN_EOF) {
+    if (parser.previous.type == TOKEN_SEMICOLON)
+      return;
+    switch (parser.current.type) {
+    case TOKEN_CLASS:
+    case TOKEN_FUN:
+    case TOKEN_VAR:
+    case TOKEN_FOR:
+    case TOKEN_IF:
+    case TOKEN_WHILE:
+    case TOKEN_PRINT:
+    case TOKEN_RETURN:
+      return;
+    default:; // Do nothing.
+    }
+    advance();
+  }
+}
+
 static void declaration() {
   statement();
+
+  if (parser.panicMode)
+    synchronize();
 }
 
 static void statement() {
