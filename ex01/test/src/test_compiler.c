@@ -75,4 +75,4 @@ int test_printstmt() {
   int result = test_expr("print 1 + 2;", &expected);
   freeChunk(&expected);
   return result;
-};
+}
