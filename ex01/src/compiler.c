@@ -18,6 +18,8 @@ static void binary();
 static void literal();
 static void number();
 static void string();
+static void statement();
+static void declaration();
 typedef struct {
   Token current;
   Token previous;
@@ -274,6 +276,14 @@ static void literal() {
 
 static void expression() { parsePrecedence(PREC_ASSIGNMENT); }
 
+static void declaration() {
+  statement();
+}
+
+static void statement() {
+  printStatement();
+}
+
 static void grouping() {
   expression();
   consume(TOKEN_RIGHT_PAREN, "Expect ')' after expression");
@@ -299,8 +309,9 @@ bool compile(const char *source, Chunk *chunk) {
   parser.panicMode = false;
 
   advance();
-  expression();
-  consume(TOKEN_EOF, "Expect end of expression.");
+  while (!match(TOKEN_EOF)) {
+    declaration();
+  }
   endCompiler();
   return !parser.hadError;
 }
