@@ -57,7 +57,7 @@ int test_exprstmt() {
   int result = test_expr("1 + 2;", &expected);
   freeChunk(&expected);
   return result;
-};
+}
 
 int test_printstmt() {
   Chunk expected;
