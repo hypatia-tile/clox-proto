@@ -299,7 +299,7 @@ static void literal() {
 static void expression() { parsePrecedence(PREC_ASSIGNMENT); }
 
 static void varDeclaration() {
-  uint8_t global = parseVariable("Expect variable name");
+  uint8_t global = parseVariable("Expect variable name.");
   if (match(TOKEN_EQUAL)) {
     expression();
   } else {
