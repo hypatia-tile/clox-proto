@@ -12,15 +12,15 @@
 #include "debug.h"
 #endif // DEBUG_PRINT_CODE
 
-static void grouping();
-static void unary();
-static void binary();
-static void literal();
-static void number();
-static void string();
+static void grouping(bool canAssign);
+static void unary(bool canAssign);
+static void binary(bool canAssign);
+static void literal(bool canAssign);
+static void number(bool canAssign);
+static void string(bool canAssign);
 static void statement();
 static void declaration();
-static void variable();
+static void variable(bool canAssign);
 typedef struct {
   Token current;
   Token previous;
@@ -44,7 +44,7 @@ typedef enum {
 
 static void parsePrecedence(Precedence precedence);
 
-typedef void (*ParseFn)();
+typedef void (*ParseFn)(bool canAssign);
 
 typedef struct {
   ParseFn prefix;
@@ -146,7 +146,8 @@ static void endCompiler() {
 #endif // DEBUG_PRINT_CODE
 }
 
-static void unary() {
+static void unary(bool canAssign) {
+  (void) canAssign;
   TokenType operatorType = parser.previous.type;
 
   // Compile the operand.
@@ -216,12 +217,13 @@ static void parsePrecedence(Precedence precedence) {
     return;
   }
 
-  prefixRule();
+  bool canAssign = precedence <= PREC_ASSIGNMENT;
+  prefixRule(canAssign);
 
   while (precedence <= getRule(parser.current.type)->precedence) {
     advance();
     ParseFn infixRule = getRule(parser.previous.type)->infix;
-    infixRule();
+    infixRule(canAssign);
   }
 }
 
@@ -240,7 +242,8 @@ static void defineVariable(uint8_t global) {
 
 static const ParseRule *getRule(TokenType type) { return &rules[type]; }
 
-static void binary() {
+static void binary(bool canAssign) {
+  (void) canAssign;
   TokenType operatorType = parser.previous.type;
   const ParseRule *rule = getRule(operatorType);
   parsePrecedence((Precedence)(rule->precedence + 1));
@@ -281,7 +284,8 @@ static void binary() {
   }
 }
 
-static void literal() {
+static void literal(bool canAssign) {
+  (void) canAssign;
   switch (parser.previous.type) {
   case TOKEN_FALSE:
     emitByte(OP_FALSE);
@@ -363,30 +367,39 @@ static void statement() {
   }
 }
 
-static void grouping() {
+static void grouping(bool canAssign) {
+  (void) canAssign;
   expression();
   consume(TOKEN_RIGHT_PAREN, "Expect ')' after expression");
 }
 
-static void number() {
+static void number(bool canAssign) {
+  (void) canAssign;
   double value = strtod(parser.previous.start, NULL);
   emitConstant(NUMBER_VAL(value));
 }
 
-static void string() {
+static void string(bool canAssign) {
+  (void) canAssign;
   emitConstant(OBJ_VAL(
       copyString(parser.previous.start + 1,
                  parser.previous.length -
                      2))); // trim the leading and trailing quotation marks.
 }
 
-static void namedVariable(Token name) {
+static void namedVariable(Token name, bool canAssign) {
   uint8_t arg = identifierConstant(&name);
-  emitBytes(OP_GET_GLOBAL, arg);
+
+  if (canAssign && match(TOKEN_EQUAL)) {
+    expression();
+    emitBytes(OP_SET_GLOBAL, arg);
+  } else {
+    emitBytes(OP_GET_GLOBAL, arg);
+  }
 }
 
-static void variable() {
-  namedVariable(parser.previous);
+static void variable(bool canAssign) {
+  namedVariable(parser.previous, canAssign);
 }
 
 bool compile(const char *source, Chunk *chunk) {
