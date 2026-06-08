@@ -1,0 +1,3 @@
+var globalA = "abcde";
+var globalB = "fghij";
+globalA + globalB;

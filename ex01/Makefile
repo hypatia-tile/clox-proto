@@ -20,6 +20,7 @@ TEST_BIN_DIR = test/bin
 TEST_SRC_FILES = $(wildcard $(TEST_SRC_DIR)/test_*.c)
 TEST_OBJ_FILES = $(patsubst $(TEST_SRC_DIR)/%.c,$(TEST_OBJ_DIR)/%.o,$(TEST_SRC_FILES)) \
 								 $(filter-out $(APP_OBJ),$(OBJ_FILES))
+EXAMPLES = $(wildcard examples/*.lox)
 
 TARGET = $(BIN_DIR)/ex01
 TEST_TARGET = $(TEST_BIN_DIR)/test_ex01
@@ -56,6 +57,11 @@ $(TEST_OBJ_DIR)/%.o: $(TEST_SRC_DIR)/%.c
 test: $(TEST_TARGET)
 	@$<
 
+tests: $(EXAMPLES)
+
+$(EXAMPLES): $(TARGET)
+	./$< $@ > /dev/null
+
 debug: $(DEBUG_TARGET)
 	@lldb $<
 
@@ -69,5 +75,5 @@ clean:
 	@rm -rf $(BIN_DIR) $(OBJ_DIR) $(TEST_OBJ_DIR) $(TEST_BIN_DIR) \
 		$(DEBUG_OBJ_DIR) $(DEBUG_BIN_DIR)
 
-.PHONY: all run clean test repl debug
+.PHONY: all run clean test tests repl debug
 
