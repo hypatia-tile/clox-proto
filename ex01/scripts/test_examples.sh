@@ -3,16 +3,23 @@ BINARY="${1:-./bin/ex01}"
 PASS=0
 FAIL=0
 TMPFILE=$(mktemp)
-trap 'rm -f "$TMPFILE"' EXIT
+TMPERR=$(mktemp)
+trap 'rm -f "$TMPFILE" "$TMPERR"' EXIT
 
 for file in examples/*.lox; do
   expected=$(grep '// expect: ' "$file" | sed 's|.*// expect: ||')
+  if [ -z "$expected" ]; then
+    echo "FAIL: $file (no // expect: lines)"
+    FAIL=$((FAIL + 1))
+    continue
+  fi
 
-  "$BINARY" "$file" > "$TMPFILE" 2>/dev/null
+  "$BINARY" "$file" > "$TMPFILE" 2> "$TMPERR"
   ec=$?
 
   if [ "$ec" -ne 0 ]; then
     echo "FAIL: $file (exit $ec)"
+    sed 's/^/  /' "$TMPERR"
     FAIL=$((FAIL + 1))
     continue
   fi
