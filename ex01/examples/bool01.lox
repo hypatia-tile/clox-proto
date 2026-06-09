@@ -1,0 +1,4 @@
+// expect: true
+// expect: false
+print true;
+print false;

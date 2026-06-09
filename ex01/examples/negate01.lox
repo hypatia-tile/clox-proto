@@ -1,0 +1,6 @@
+// expect: -3
+// expect: false
+// expect: true
+print -3;
+print !true;
+print !false;

@@ -1,0 +1,4 @@
+var globalA = "abcde";
+var globalB = "fghij";
+// expect: abcdefghij
+print globalA + globalB;
