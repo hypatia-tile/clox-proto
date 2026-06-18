@@ -12,6 +12,8 @@
 #include "debug.h"
 #endif // DEBUG_PRINT_CODE
 
+#define UINT8_COUNT (UINT8_MAX + 1)
+
 static void grouping(bool canAssign);
 static void unary(bool canAssign);
 static void binary(bool canAssign);
@@ -52,9 +54,21 @@ typedef struct {
   Precedence precedence;
 } ParseRule;
 
+typedef struct {
+  Token name;
+  int depth;
+} Local;
+
+typedef struct {
+  Local locals[UINT8_COUNT];
+  int localCount;
+  int scopeDepth;
+} Compiler;
+
 static const ParseRule *getRule(TokenType type);
 
 static Parser parser;
+Compiler *current = NULL;
 
 static Chunk *compilingChunk;
 
@@ -135,6 +149,12 @@ static uint8_t makeConstant(Value value) {
 
 static void emitConstant(Value value) {
   emitBytes(OP_CONSTANT, makeConstant(value));
+}
+
+static void initCompiler(Compiler *compiler) {
+  compiler->localCount = 0;
+  compiler->scopeDepth = 0;
+  current = compiler;
 }
 
 static void endCompiler() {
@@ -404,6 +424,8 @@ static void variable(bool canAssign) {
 
 bool compile(const char *source, Chunk *chunk) {
   initScanner(source);
+  Compiler compiler;
+  initCompiler(&compiler);
   compilingChunk = chunk;
 
   parser.hadError = false;
