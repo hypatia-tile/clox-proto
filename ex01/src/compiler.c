@@ -495,7 +495,7 @@ static void namedVariable(Token name, bool canAssign) {
     setOp = OP_SET_LOCAL;
   } else {
     arg = identifierConstant(&name);
-    getOp = OP_SET_GLOBAL;
+    getOp = OP_GET_GLOBAL;
     setOp = OP_SET_GLOBAL;
   }
 
