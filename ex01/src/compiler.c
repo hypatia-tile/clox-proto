@@ -69,8 +69,7 @@ typedef struct {
 static const ParseRule *getRule(TokenType type);
 
 static Parser parser;
-Compiler *current = NULL;
-
+static Compiler *current = NULL;
 static Chunk *compilingChunk;
 
 static Chunk *currentChunk() { return compilingChunk; }
