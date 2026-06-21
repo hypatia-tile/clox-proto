@@ -168,7 +168,7 @@ static InterpretResult run() {
       push(vm.stack[slot]);
       break;
     }
-    case OP_SET_GLOBAL: {
+    case OP_SET_LOCAL: {
       uint8_t slot = READ_BYTE();
       vm.stack[slot] = peek(0);
       break;
