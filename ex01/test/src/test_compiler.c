@@ -76,3 +76,72 @@ int test_printstmt() {
   freeChunk(&expected);
   return result;
 }
+
+int test_local_var_decl() {
+  Chunk expected;
+  initChunk(&expected);
+  writeChunk(&expected, OP_CONSTANT, 1);
+  int idx = addConstant(&expected, NUMBER_VAL(1));
+  writeChunk(&expected, idx, 1);
+  writeChunk(&expected, OP_POP, 1);
+  writeChunk(&expected, OP_RETURN, 1);
+
+  int result = test_expr("{ var a = 1; }", &expected);
+  freeChunk(&expected);
+  return result;
+}
+
+int test_local_var_get() {
+  Chunk expected;
+  initChunk(&expected);
+  writeChunk(&expected, OP_CONSTANT, 1);
+  int idx = addConstant(&expected, NUMBER_VAL(1));
+  writeChunk(&expected, idx, 1);
+  writeChunk(&expected, OP_GET_LOCAL, 1);
+  writeChunk(&expected, 0, 1);
+  writeChunk(&expected, OP_PRINT, 1);
+  writeChunk(&expected, OP_POP, 1);
+  writeChunk(&expected, OP_RETURN, 1);
+
+  int result = test_expr("{ var a = 1; print a; }", &expected);
+  freeChunk(&expected);
+  return result;
+}
+
+int test_local_var_set() {
+  Chunk expected;
+  initChunk(&expected);
+  writeChunk(&expected, OP_CONSTANT, 1);
+  int idx1 = addConstant(&expected, NUMBER_VAL(1));
+  writeChunk(&expected, idx1, 1);
+  writeChunk(&expected, OP_CONSTANT, 1);
+  int idx2 = addConstant(&expected, NUMBER_VAL(2));
+  writeChunk(&expected, idx2, 1);
+  writeChunk(&expected, OP_SET_LOCAL, 1);
+  writeChunk(&expected, 0, 1);
+  writeChunk(&expected, OP_POP, 1);
+  writeChunk(&expected, OP_POP, 1);
+  writeChunk(&expected, OP_RETURN, 1);
+
+  int result = test_expr("{ var a = 1; a = 2; }", &expected);
+  freeChunk(&expected);
+  return result;
+}
+
+int test_nested_scope() {
+  Chunk expected;
+  initChunk(&expected);
+  writeChunk(&expected, OP_CONSTANT, 1);
+  int idx1 = addConstant(&expected, NUMBER_VAL(1));
+  writeChunk(&expected, idx1, 1);
+  writeChunk(&expected, OP_CONSTANT, 1);
+  int idx2 = addConstant(&expected, NUMBER_VAL(2));
+  writeChunk(&expected, idx2, 1);
+  writeChunk(&expected, OP_POP, 1);
+  writeChunk(&expected, OP_POP, 1);
+  writeChunk(&expected, OP_RETURN, 1);
+
+  int result = test_expr("{ var a = 1; { var b = 2; } }", &expected);
+  freeChunk(&expected);
+  return result;
+}

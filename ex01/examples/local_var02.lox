@@ -1,0 +1,6 @@
+{
+  var a = 1;
+  a = 2;
+  // expect: 2
+  print a;
+}
