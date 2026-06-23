@@ -20,12 +20,15 @@ jobs:
         run: make
 
       - name: Run test
+        timeout-minutes: 5
         run: make test
 
       - name: Run examples
+        timeout-minutes: 5
         run: make tests
 
       - name: Run executable
+        timeout-minutes: 5
         run: make run
 
       - name: Clean
