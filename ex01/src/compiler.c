@@ -17,6 +17,7 @@
 
 static void grouping(bool canAssign);
 static void unary(bool canAssign);
+static void and_(bool canAssign);
 static void binary(bool canAssign);
 static void literal(bool canAssign);
 static void number(bool canAssign);
@@ -134,7 +135,7 @@ static int emitJump(uint8_t instruction) {
   emitByte(instruction);
   emitByte(0xff);
   emitByte(0xff);
-  return currentChunk()->count-2;
+  return currentChunk()->count - 2;
 }
 
 static void emitBytes(uint8_t byte1, uint8_t byte2) {
@@ -160,7 +161,7 @@ static void emitConstant(Value value) {
 
 static void patchJump(int offset) {
   // -2 to adjust for the bytecode for the jump offset itself.
-  int jump = currentChunk()->count - offset -2;
+  int jump = currentChunk()->count - offset - 2;
 
   if (jump > UINT16_MAX) {
     error("Too much code to jump over.");
@@ -240,7 +241,7 @@ static const ParseRule rules[] = {
     [TOKEN_IDENTIFIER] = {variable, NULL, PREC_NONE},
     [TOKEN_STRING] = {string, NULL, PREC_NONE},
     [TOKEN_NUMBER] = {number, NULL, PREC_NONE},
-    [TOKEN_AND] = {NULL, NULL, PREC_NONE},
+    [TOKEN_AND] = {NULL, and_, PREC_AND},
     [TOKEN_CLASS] = {NULL, NULL, PREC_NONE},
     [TOKEN_ELSE] = {NULL, NULL, PREC_NONE},
     [TOKEN_FALSE] = {literal, NULL, PREC_NONE},
@@ -351,6 +352,15 @@ static void defineVariable(uint8_t global) {
     return;
   }
   emitBytes(OP_DEFINE_GLOBAL, global);
+}
+
+static void and_(bool canAssign) {
+  (void)canAssign;
+  int endJump = emitJump(OP_JUMP_IF_FALSE);
+  emitByte(OP_POP);
+  parsePrecedence(PREC_AND);
+
+  patchJump(endJump);
 }
 
 static const ParseRule *getRule(TokenType type) { return &rules[type]; }
