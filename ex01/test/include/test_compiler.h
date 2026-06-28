@@ -12,5 +12,7 @@ int test_if_then();
 int test_if_else();
 int test_and();
 int test_or();
+int test_while();
+int test_for_with_var();
 
 #endif // test_clox_compiler_h

@@ -251,3 +251,87 @@ int test_or() {
   freeChunk(&expected);
   return result;
 }
+
+int test_while() {
+  Chunk expected;
+  initChunk(&expected);
+  // loopStart = 0; condition: false
+  writeChunk(&expected, OP_FALSE, 1);
+  // JUMP_IF_FALSE over pop+body+loop (offset 7)
+  writeChunk(&expected, OP_JUMP_IF_FALSE, 1);
+  writeChunk(&expected, 0, 1);
+  writeChunk(&expected, 7, 1);
+  // truthy path: pop condition, body: print 1
+  writeChunk(&expected, OP_POP, 1);
+  writeChunk(&expected, OP_CONSTANT, 1);
+  int idx = addConstant(&expected, NUMBER_VAL(1));
+  writeChunk(&expected, idx, 1);
+  writeChunk(&expected, OP_PRINT, 1);
+  // loop back to loopStart=0; after emitting OP_LOOP count=9, offset=9-0+2=11
+  writeChunk(&expected, OP_LOOP, 1);
+  writeChunk(&expected, 0, 1);
+  writeChunk(&expected, 11, 1);
+  // falsy path: pop condition
+  writeChunk(&expected, OP_POP, 1);
+  writeChunk(&expected, OP_RETURN, 1);
+
+  int result = test_expr("while (false) print 1;", &expected);
+  freeChunk(&expected);
+  return result;
+}
+
+int test_for_with_var() {
+  Chunk expected;
+  initChunk(&expected);
+  // initializer: var i = 0
+  writeChunk(&expected, OP_CONSTANT, 1);
+  int idx0 = addConstant(&expected, NUMBER_VAL(0));
+  writeChunk(&expected, idx0, 1);
+  // loopStart=2; condition: i < 1
+  writeChunk(&expected, OP_GET_LOCAL, 1);
+  writeChunk(&expected, 0, 1);
+  writeChunk(&expected, OP_CONSTANT, 1);
+  int idx1 = addConstant(&expected, NUMBER_VAL(1));
+  writeChunk(&expected, idx1, 1);
+  writeChunk(&expected, OP_LESS, 1);
+  // JUMP_IF_FALSE to exit (exitJump=8); patched to offset 21
+  writeChunk(&expected, OP_JUMP_IF_FALSE, 1);
+  writeChunk(&expected, 0, 1);
+  writeChunk(&expected, 21, 1);
+  // truthy: pop condition
+  writeChunk(&expected, OP_POP, 1);
+  // JUMP over increment to body (bodyJump=12); patched to offset 11
+  writeChunk(&expected, OP_JUMP, 1);
+  writeChunk(&expected, 0, 1);
+  writeChunk(&expected, 11, 1);
+  // incrementStart=14; increment: i = i + 1
+  writeChunk(&expected, OP_GET_LOCAL, 1);
+  writeChunk(&expected, 0, 1);
+  writeChunk(&expected, OP_CONSTANT, 1);
+  int idx2 = addConstant(&expected, NUMBER_VAL(1));
+  writeChunk(&expected, idx2, 1);
+  writeChunk(&expected, OP_ADD, 1);
+  writeChunk(&expected, OP_SET_LOCAL, 1);
+  writeChunk(&expected, 0, 1);
+  writeChunk(&expected, OP_POP, 1);
+  // loop to condition at loopStart=2; after emitting OP_LOOP count=23, offset=23-2+2=23
+  writeChunk(&expected, OP_LOOP, 1);
+  writeChunk(&expected, 0, 1);
+  writeChunk(&expected, 23, 1);
+  // body (starts at 25): print i
+  writeChunk(&expected, OP_GET_LOCAL, 1);
+  writeChunk(&expected, 0, 1);
+  writeChunk(&expected, OP_PRINT, 1);
+  // loop to increment at incrementStart=14; after emitting OP_LOOP count=29, offset=29-14+2=17
+  writeChunk(&expected, OP_LOOP, 1);
+  writeChunk(&expected, 0, 1);
+  writeChunk(&expected, 17, 1);
+  // falsy: pop condition; endScope: pop local i
+  writeChunk(&expected, OP_POP, 1);
+  writeChunk(&expected, OP_POP, 1);
+  writeChunk(&expected, OP_RETURN, 1);
+
+  int result = test_expr("for (var i = 0; i < 1; i = i + 1) print i;", &expected);
+  freeChunk(&expected);
+  return result;
+}

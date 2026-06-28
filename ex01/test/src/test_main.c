@@ -11,5 +11,7 @@ int main(void) {
   i += test_if_else();
   i += test_and();
   i += test_or();
+  i += test_while();
+  i += test_for_with_var();
   return i;
 }
