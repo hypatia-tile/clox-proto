@@ -8,5 +8,9 @@ int test_local_var_decl();
 int test_local_var_get();
 int test_local_var_set();
 int test_nested_scope();
+int test_if_then();
+int test_if_else();
+int test_and();
+int test_or();
 
 #endif // test_clox_compiler_h

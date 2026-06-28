@@ -145,3 +145,109 @@ int test_nested_scope() {
   freeChunk(&expected);
   return result;
 }
+
+int test_if_then() {
+  Chunk expected;
+  initChunk(&expected);
+  // condition
+  writeChunk(&expected, OP_TRUE, 1);
+  // JUMP_IF_FALSE over then-body (offset 7 bytes ahead)
+  writeChunk(&expected, OP_JUMP_IF_FALSE, 1);
+  writeChunk(&expected, 0, 1);
+  writeChunk(&expected, 7, 1);
+  // then branch: pop condition, print 1
+  writeChunk(&expected, OP_POP, 1);
+  writeChunk(&expected, OP_CONSTANT, 1);
+  int idx = addConstant(&expected, NUMBER_VAL(1));
+  writeChunk(&expected, idx, 1);
+  writeChunk(&expected, OP_PRINT, 1);
+  // JUMP over else-pop (offset 1 byte ahead)
+  writeChunk(&expected, OP_JUMP, 1);
+  writeChunk(&expected, 0, 1);
+  writeChunk(&expected, 1, 1);
+  // else branch: pop condition (no else body)
+  writeChunk(&expected, OP_POP, 1);
+  writeChunk(&expected, OP_RETURN, 1);
+
+  int result = test_expr("if (true) print 1;", &expected);
+  freeChunk(&expected);
+  return result;
+}
+
+int test_if_else() {
+  Chunk expected;
+  initChunk(&expected);
+  // condition
+  writeChunk(&expected, OP_TRUE, 1);
+  // JUMP_IF_FALSE over then-body (offset 7 bytes ahead)
+  writeChunk(&expected, OP_JUMP_IF_FALSE, 1);
+  writeChunk(&expected, 0, 1);
+  writeChunk(&expected, 7, 1);
+  // then branch: pop condition, print 1
+  writeChunk(&expected, OP_POP, 1);
+  writeChunk(&expected, OP_CONSTANT, 1);
+  int idx1 = addConstant(&expected, NUMBER_VAL(1));
+  writeChunk(&expected, idx1, 1);
+  writeChunk(&expected, OP_PRINT, 1);
+  // JUMP over else-body (offset 4 bytes ahead)
+  writeChunk(&expected, OP_JUMP, 1);
+  writeChunk(&expected, 0, 1);
+  writeChunk(&expected, 4, 1);
+  // else branch: pop condition, print 2
+  writeChunk(&expected, OP_POP, 1);
+  writeChunk(&expected, OP_CONSTANT, 1);
+  int idx2 = addConstant(&expected, NUMBER_VAL(2));
+  writeChunk(&expected, idx2, 1);
+  writeChunk(&expected, OP_PRINT, 1);
+  writeChunk(&expected, OP_RETURN, 1);
+
+  int result = test_expr("if (true) print 1; else print 2;", &expected);
+  freeChunk(&expected);
+  return result;
+}
+
+int test_and() {
+  Chunk expected;
+  initChunk(&expected);
+  // left operand
+  writeChunk(&expected, OP_TRUE, 1);
+  // JUMP_IF_FALSE to end, skipping OP_POP + right operand (offset 2 bytes ahead)
+  writeChunk(&expected, OP_JUMP_IF_FALSE, 1);
+  writeChunk(&expected, 0, 1);
+  writeChunk(&expected, 2, 1);
+  // pop left operand and evaluate right
+  writeChunk(&expected, OP_POP, 1);
+  writeChunk(&expected, OP_FALSE, 1);
+  // expression statement pop + return
+  writeChunk(&expected, OP_POP, 1);
+  writeChunk(&expected, OP_RETURN, 1);
+
+  int result = test_expr("true and false;", &expected);
+  freeChunk(&expected);
+  return result;
+}
+
+int test_or() {
+  Chunk expected;
+  initChunk(&expected);
+  // left operand
+  writeChunk(&expected, OP_FALSE, 1);
+  // JUMP_IF_FALSE past the unconditional jump (offset 3 bytes ahead)
+  writeChunk(&expected, OP_JUMP_IF_FALSE, 1);
+  writeChunk(&expected, 0, 1);
+  writeChunk(&expected, 3, 1);
+  // left was truthy: JUMP over OP_POP + right operand (offset 2 bytes ahead)
+  writeChunk(&expected, OP_JUMP, 1);
+  writeChunk(&expected, 0, 1);
+  writeChunk(&expected, 2, 1);
+  // left was falsy: pop left, evaluate right
+  writeChunk(&expected, OP_POP, 1);
+  writeChunk(&expected, OP_TRUE, 1);
+  // expression statement pop + return
+  writeChunk(&expected, OP_POP, 1);
+  writeChunk(&expected, OP_RETURN, 1);
+
+  int result = test_expr("false or true;", &expected);
+  freeChunk(&expected);
+  return result;
+}
