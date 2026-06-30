@@ -59,7 +59,7 @@ tests: $(TARGET)
 	@bash scripts/test_examples.sh $<
 
 debug: $(DEBUG_TARGET)
-	@xcrun lldb $<
+	@sh -c 'if [ "$$(uname -s)" = Darwin ]; then exec xcrun lldb "$$1"; else exec lldb "$$1"; fi' sh "$<"
 
 run: $(TARGET)
 	@./$< $(inputfile)
