@@ -26,16 +26,20 @@
     devShells = forAllSystems (
       system: let
         pkgs = pkgsFor system;
+        isDarwin = pkgs.stdenv.isDarwin;
       in {
         default = pkgs.mkShell {
-          packages = with pkgs; [
-            clang
-            clang-tools
-            gnumake
-            lldb
-            pkg-config
-            bear
-          ];
+          packages = with pkgs;
+            [
+              clang
+              clang-tools
+              gnumake
+              pkg-config
+              bear
+            ]
+            ++ pkgs.lib.optionals (!isDarwin) [
+              lldb
+            ];
         };
       }
     );

@@ -59,7 +59,7 @@ tests: $(TARGET)
 	@bash scripts/test_examples.sh $<
 
 debug: $(DEBUG_TARGET)
-	@lldb $<
+	@xcrun lldb $<
 
 run: $(TARGET)
 	@./$< $(inputfile)
