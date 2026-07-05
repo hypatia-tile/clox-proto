@@ -168,5 +168,41 @@
     ],
     "directory": "/home/hypatia/repos/github.com/hypatia-tile/clox-proto/ex01",
     "output": "obj/vm.o"
+  },
+  {
+    "file": "test/src/test_compiler.c",
+    "arguments": [
+      "clang",
+      "-c",
+      "-I./include",
+      "-I./test/include",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-std=c11",
+      "-o",
+      "test/obj/test_compiler.o",
+      "test/src/test_compiler.c"
+    ],
+    "directory": "/home/hypatia/repos/github.com/hypatia-tile/clox-proto/ex01",
+    "output": "test/obj/test_compiler.o"
+  },
+  {
+    "file": "test/src/test_main.c",
+    "arguments": [
+      "clang",
+      "-c",
+      "-I./include",
+      "-I./test/include",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-std=c11",
+      "-o",
+      "test/obj/test_main.o",
+      "test/src/test_main.c"
+    ],
+    "directory": "/home/hypatia/repos/github.com/hypatia-tile/clox-proto/ex01",
+    "output": "test/obj/test_main.o"
   }
 ]
