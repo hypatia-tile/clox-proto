@@ -1,0 +1,208 @@
+[
+  {
+    "file": "src/chunk.c",
+    "arguments": [
+      "clang",
+      "-c",
+      "-I./include",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-std=c11",
+      "-o",
+      "obj/chunk.o",
+      "src/chunk.c"
+    ],
+    "directory": "/home/hypatia/repos/github.com/hypatia-tile/clox-proto/ex01",
+    "output": "obj/chunk.o"
+  },
+  {
+    "file": "src/compiler.c",
+    "arguments": [
+      "clang",
+      "-c",
+      "-I./include",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-std=c11",
+      "-o",
+      "obj/compiler.o",
+      "src/compiler.c"
+    ],
+    "directory": "/home/hypatia/repos/github.com/hypatia-tile/clox-proto/ex01",
+    "output": "obj/compiler.o"
+  },
+  {
+    "file": "src/debug.c",
+    "arguments": [
+      "clang",
+      "-c",
+      "-I./include",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-std=c11",
+      "-o",
+      "obj/debug.o",
+      "src/debug.c"
+    ],
+    "directory": "/home/hypatia/repos/github.com/hypatia-tile/clox-proto/ex01",
+    "output": "obj/debug.o"
+  },
+  {
+    "file": "src/main.c",
+    "arguments": [
+      "clang",
+      "-c",
+      "-I./include",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-std=c11",
+      "-o",
+      "obj/main.o",
+      "src/main.c"
+    ],
+    "directory": "/home/hypatia/repos/github.com/hypatia-tile/clox-proto/ex01",
+    "output": "obj/main.o"
+  },
+  {
+    "file": "src/memory.c",
+    "arguments": [
+      "clang",
+      "-c",
+      "-I./include",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-std=c11",
+      "-o",
+      "obj/memory.o",
+      "src/memory.c"
+    ],
+    "directory": "/home/hypatia/repos/github.com/hypatia-tile/clox-proto/ex01",
+    "output": "obj/memory.o"
+  },
+  {
+    "file": "src/object.c",
+    "arguments": [
+      "clang",
+      "-c",
+      "-I./include",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-std=c11",
+      "-o",
+      "obj/object.o",
+      "src/object.c"
+    ],
+    "directory": "/home/hypatia/repos/github.com/hypatia-tile/clox-proto/ex01",
+    "output": "obj/object.o"
+  },
+  {
+    "file": "src/scanner.c",
+    "arguments": [
+      "clang",
+      "-c",
+      "-I./include",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-std=c11",
+      "-o",
+      "obj/scanner.o",
+      "src/scanner.c"
+    ],
+    "directory": "/home/hypatia/repos/github.com/hypatia-tile/clox-proto/ex01",
+    "output": "obj/scanner.o"
+  },
+  {
+    "file": "src/table.c",
+    "arguments": [
+      "clang",
+      "-c",
+      "-I./include",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-std=c11",
+      "-o",
+      "obj/table.o",
+      "src/table.c"
+    ],
+    "directory": "/home/hypatia/repos/github.com/hypatia-tile/clox-proto/ex01",
+    "output": "obj/table.o"
+  },
+  {
+    "file": "src/value.c",
+    "arguments": [
+      "clang",
+      "-c",
+      "-I./include",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-std=c11",
+      "-o",
+      "obj/value.o",
+      "src/value.c"
+    ],
+    "directory": "/home/hypatia/repos/github.com/hypatia-tile/clox-proto/ex01",
+    "output": "obj/value.o"
+  },
+  {
+    "file": "src/vm.c",
+    "arguments": [
+      "clang",
+      "-c",
+      "-I./include",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-std=c11",
+      "-o",
+      "obj/vm.o",
+      "src/vm.c"
+    ],
+    "directory": "/home/hypatia/repos/github.com/hypatia-tile/clox-proto/ex01",
+    "output": "obj/vm.o"
+  },
+  {
+    "file": "test/src/test_compiler.c",
+    "arguments": [
+      "clang",
+      "-c",
+      "-I./include",
+      "-I./test/include",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-std=c11",
+      "-o",
+      "test/obj/test_compiler.o",
+      "test/src/test_compiler.c"
+    ],
+    "directory": "/home/hypatia/repos/github.com/hypatia-tile/clox-proto/ex01",
+    "output": "test/obj/test_compiler.o"
+  },
+  {
+    "file": "test/src/test_main.c",
+    "arguments": [
+      "clang",
+      "-c",
+      "-I./include",
+      "-I./test/include",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-std=c11",
+      "-o",
+      "test/obj/test_main.o",
+      "test/src/test_main.c"
+    ],
+    "directory": "/home/hypatia/repos/github.com/hypatia-tile/clox-proto/ex01",
+    "output": "test/obj/test_main.o"
+  }
+]

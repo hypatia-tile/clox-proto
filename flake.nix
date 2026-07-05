@@ -27,6 +27,7 @@
       system: let
         pkgs = pkgsFor system;
         isDarwin = pkgs.stdenv.isDarwin;
+        isLinux = pkgs.stdenv.isLinux;
       in {
         default = pkgs.mkShell {
           packages = with pkgs;
@@ -36,6 +37,9 @@
               gnumake
               pkg-config
               bear
+            ]
+            ++ pkgs.lib.optionals isLinux [
+              glibc.dev
             ]
             ++ pkgs.lib.optionals (!isDarwin) [
               lldb
