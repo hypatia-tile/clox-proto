@@ -1,5 +1,0 @@
--Iinclude
--Itest/include
--Wall
--Wextra
--Werror
