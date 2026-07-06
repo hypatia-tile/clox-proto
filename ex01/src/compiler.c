@@ -62,7 +62,15 @@ typedef struct {
   int depth;
 } Local;
 
+typedef enum {
+  TYPE_FUNCTION,
+  TYPE_SCRIPT,
+} FunctionType;
+
 typedef struct {
+  ObjFunction *function;
+  FunctionType type;
+
   Local locals[UINT8_COUNT];
   int localCount;
   int scopeDepth;
@@ -74,7 +82,9 @@ static Parser parser;
 static Compiler *current = NULL;
 static Chunk *compilingChunk;
 
-static Chunk *currentChunk() { return compilingChunk; }
+static Chunk *currentChunk() {
+  return &current->function->chunk;
+}
 
 static void errorAt(Token *token, const char *message) {
   if (parser.panicMode)
