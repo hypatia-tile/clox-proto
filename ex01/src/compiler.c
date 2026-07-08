@@ -65,7 +65,8 @@ typedef enum {
   TYPE_SCRIPT,
 } FunctionType;
 
-typedef struct {
+typedef struct Compiler {
+  struct Compiler *enclosing;
   ObjFunction *function;
   FunctionType type;
 
@@ -190,6 +191,7 @@ static void patchJump(int offset) {
 }
 
 static void initCompiler(Compiler *compiler, FunctionType type) {
+  compiler->enclosing = current;
   compiler->function = NULL; // garbage collection-related paranoia
   compiler->type = type;
   compiler->localCount = 0;
@@ -213,7 +215,7 @@ static ObjFunction *endCompiler() {
                                          : "<script>");
   }
 #endif // DEBUG_PRINT_CODE
-
+  current = current->enclosing;
   return function;
 }
 
