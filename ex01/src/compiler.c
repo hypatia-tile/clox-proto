@@ -79,7 +79,7 @@ static const ParseRule *getRule(TokenType type);
 
 static Parser parser;
 static Compiler *current = NULL;
-static Chunk *compilingChunk;
+// static Chunk *compilingChunk;
 
 static Chunk *currentChunk() { return &current->function->chunk; }
 
