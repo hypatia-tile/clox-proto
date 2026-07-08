@@ -13,8 +13,6 @@
 #include "debug.h"
 #endif // DEBUG_PRINT_CODE
 
-#define UINT8_COUNT (UINT8_MAX + 1)
-
 static void grouping(bool canAssign);
 static void unary(bool canAssign);
 static void and_(bool canAssign);
@@ -678,7 +676,7 @@ static void variable(bool canAssign) {
   namedVariable(parser.previous, canAssign);
 }
 
-ObjFunction *compile(const char *source, Chunk *chunk) {
+ObjFunction *compile(const char *source) {
   initScanner(source);
   Compiler compiler;
   initCompiler(&compiler, TYPE_SCRIPT);
