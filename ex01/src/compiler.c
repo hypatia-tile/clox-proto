@@ -15,12 +15,14 @@
 
 static void grouping(bool canAssign);
 static void unary(bool canAssign);
+static void call(bool canAssign);
 static void and_(bool canAssign);
 static void or_(bool canAssign);
 static void binary(bool canAssign);
 static void literal(bool canAssign);
 static void number(bool canAssign);
 static void string(bool canAssign);
+static void expression();
 static void statement();
 static void declaration();
 static void variable(bool canAssign);
@@ -257,7 +259,7 @@ static void unary(bool canAssign) {
 }
 
 static const ParseRule rules[] = {
-    [TOKEN_LEFT_PAREN] = {grouping, NULL, PREC_NONE},
+    [TOKEN_LEFT_PAREN] = {grouping, call, PREC_NONE},
     [TOKEN_RIGHT_PAREN] = {NULL, NULL, PREC_NONE},
     [TOKEN_LEFT_BRACE] = {NULL, NULL, PREC_NONE},
     [TOKEN_RIGHT_BRACE] = {NULL, NULL, PREC_NONE},
@@ -394,6 +396,21 @@ static void defineVariable(uint8_t global) {
   emitBytes(OP_DEFINE_GLOBAL, global);
 }
 
+static uint8_t argumentList() {
+  uint8_t argCount = 0;
+  if (!check(TOKEN_RIGHT_PAREN)) {
+    do {
+      expression();
+      if (argCount == 255) {
+        error("Can't have more than 255 arguments.");
+      }
+      argCount++;
+    } while (match(TOKEN_COMMA));
+  }
+  consume(TOKEN_RIGHT_PAREN, "Expect ')' after arguments.");
+  return argCount;
+}
+
 static void and_(bool canAssign) {
   (void)canAssign;
   int endJump = emitJump(OP_JUMP_IF_FALSE);
@@ -445,6 +462,12 @@ static void binary(bool canAssign) {
   default:
     return; // Unreachable.
   }
+}
+
+static void call(bool canAssigne) {
+  (void)canAssigne;
+  uint8_t argCount = argumentList();
+  emitBytes(OP_CALL, argCount);
 }
 
 static void literal(bool canAssign) {
