@@ -1,6 +1,7 @@
-var beverage = "cafe au lait";
-var breakfast = "beignets with " + beverage;
-print breakfast;
-breakfast = "beignets with " + beverage;
+fun a() { b(); }
+fun b() { c(); }
+fun c() {
+  c("too", "many");
+}
 
-print breakfast;
+a();
