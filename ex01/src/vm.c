@@ -68,8 +68,8 @@ static Value peek(int distance) { return vm.stackTop[-1 - distance]; }
 
 static bool call(ObjFunction *function, int argCount) {
   if (argCount != function->arity) {
-    runtimeError("Expected %d arguments but got %d.",
-        function->arity, argCount);
+    runtimeError("Expected %d arguments but got %d.", function->arity,
+                 argCount);
     return false;
   }
 
@@ -87,11 +87,11 @@ static bool call(ObjFunction *function, int argCount) {
 
 static bool callValue(Value callee, int argCount) {
   if (IS_OBJ(callee)) {
-    switch(OBJ_TYPE(callee)) {
-      case OBJ_FUNCTION:
-        return call(AS_FUNCTION(callee), argCount);
-      default:
-        break; // Non-callable object type.
+    switch (OBJ_TYPE(callee)) {
+    case OBJ_FUNCTION:
+      return call(AS_FUNCTION(callee), argCount);
+    default:
+      break; // Non-callable object type.
     }
   }
   runtimeError("Can only call functions and classes.");
@@ -212,12 +212,21 @@ static InterpretResult run() {
       if (!callValue(peek(argCount), argCount)) {
         return INTERPRET_RUNTIME_ERROR;
       }
-      frame =  &vm.frames[vm.frameCount - 1];
+      frame = &vm.frames[vm.frameCount - 1];
       break;
     }
     case OP_RETURN: {
-      // Exit interpreter.
-      return INTERPRET_OK;
+      Value result = pop();
+      vm.frameCount--;
+      if (vm.frameCount == 0) {
+        pop();
+        return INTERPRET_OK;
+      }
+
+      vm.stackTop = frame->slots;
+      push(result);
+      frame = &vm.frames[vm.frameCount - 1];
+      break;
     }
     case OP_CONSTANT: {
       Value constant = READ_CONSTANT();
