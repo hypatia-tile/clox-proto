@@ -164,7 +164,10 @@ static void emitBytes(uint8_t byte1, uint8_t byte2) {
   emitByte(byte2);
 }
 
-static void emitReturn() { emitByte(OP_RETURN); }
+static void emitReturn() {
+  emitByte(OP_NIL);
+  emitByte(OP_RETURN);
+}
 
 static uint8_t makeConstant(Value value) {
   int constant = addConstant(currentChunk(), value);
