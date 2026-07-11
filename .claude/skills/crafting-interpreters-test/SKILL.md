@@ -47,9 +47,9 @@ real compiler.
 - Do not compare `Chunk.capacity` or line numbers — they are implementation
   noise. Compare `count`, code bytes, and constants only.
 
-## Known noise
+## Debug output
 
-`DEBUG_PRINT_CODE` in `include/common.h` makes the compiler disassemble every
-chunk during tests (issue #41). Filter with
-`make test 2>&1 | grep -E "^(PASS|FAIL|compiler tests)"` when you only want
-results.
+`DEBUG_PRINT_CODE` and `DEBUG_TRACE_EXECUTION` are only defined for the debug
+build (`DEBUG_FLAGS` in the Makefile), so `make test` output is clean. To see
+compiler disassembly or execution traces, use `make debug` or build with those
+flags defined.

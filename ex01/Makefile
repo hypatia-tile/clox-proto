@@ -1,6 +1,6 @@
 CC = clang
 CFLAGS = -Wall -Wextra -Werror -std=c11
-DEBUG_FLAGS = -g -O0
+DEBUG_FLAGS = -g -O0 -DDEBUG_PRINT_CODE -DDEBUG_TRACE_EXECUTION
 
 inputfile := example/test.txt
 
