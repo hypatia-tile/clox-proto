@@ -1,337 +1,215 @@
+#include "test_compiler.h"
+
+#include "chunk.h"
 #include "compiler.h"
+#include "debug.h"
+#include "object.h"
 #include "value.h"
+#include "vm.h"
+
 #include <stdio.h>
 
-static int fail(const char *message) {
-  fprintf(stderr, "Test failed: %s\n", message);
-  return 1;
-}
+// One table entry per test case: the source to compile and the bytecode
+// (plus constant pool) the compiler is expected to produce for the
+// top-level <script> function.
+//
+// Chapter 24 notes baked into the expectations below:
+//  - compile() returns an ObjFunction*; its chunk holds the bytecode.
+//  - Every function ends with an implicit `OP_NIL OP_RETURN`.
+//  - Local slot 0 is reserved for the enclosing function, so user
+//    locals start at slot 1.
+typedef struct {
+  const char *name;
+  const char *source;
+  const uint8_t *code;
+  int codeCount;
+  const Value *constants;
+  int constantCount;
+} CompilerTest;
 
-static bool chunksEqual(Chunk *a, Chunk *b) {
-  if (a->count != b->count || a->capacity != b->capacity) {
+#define BYTES(...)                                                             \
+  .code = (const uint8_t[]){__VA_ARGS__},                                      \
+  .codeCount = (int)sizeof((const uint8_t[]){__VA_ARGS__})
+#define CONSTANTS(...)                                                         \
+  .constants = (const Value[]){__VA_ARGS__},                                   \
+  .constantCount = (int)(sizeof((const Value[]){__VA_ARGS__}) / sizeof(Value))
+
+static bool matchesExpected(const CompilerTest *test, Chunk *actual) {
+  if (actual->count != test->codeCount) {
     return false;
   }
-  for (int i = 0; i < a->count; i++) {
-    if (a->code[i] != b->code[i]) {
+  for (int i = 0; i < test->codeCount; i++) {
+    if (actual->code[i] != test->code[i]) {
       return false;
     }
   }
-  if (a->constants.count != b->constants.count ||
-      a->constants.capacity != b->constants.capacity) {
+  if (actual->constants.count != test->constantCount) {
     return false;
   }
-  for (int i = 0; i < a->constants.count; i++) {
-    if (!valuesEqual(a->constants.values[i], b->constants.values[i])) {
+  for (int i = 0; i < test->constantCount; i++) {
+    if (!valuesEqual(actual->constants.values[i], test->constants[i])) {
       return false;
     }
   }
   return true;
 }
 
-int test_expr(const char *source, Chunk *expected) {
-  Chunk chunk;
-  initChunk(&chunk);
-  if (!compile(source, &chunk)) {
-    return fail("Compilation failed");
+static void reportMismatch(const CompilerTest *test, Chunk *actual) {
+  Chunk expected;
+  initChunk(&expected);
+  for (int i = 0; i < test->codeCount; i++) {
+    writeChunk(&expected, test->code[i], 1);
   }
-  if (!chunksEqual(&chunk, expected)) {
-    return fail("Compiled chunk does not match expected");
+  for (int i = 0; i < test->constantCount; i++) {
+    addConstant(&expected, test->constants[i]);
   }
-  freeChunk(&chunk);
+  disassembleChunk(&expected, "expected");
+  disassembleChunk(actual, "actual");
+  freeChunk(&expected);
+}
+
+static int runTest(const CompilerTest *test) {
+  ObjFunction *function = compile(test->source);
+  if (function == NULL) {
+    printf("FAIL %-28s %s (did not compile)\n", test->name, test->source);
+    return 1;
+  }
+  if (!matchesExpected(test, &function->chunk)) {
+    printf("FAIL %-28s %s\n", test->name, test->source);
+    reportMismatch(test, &function->chunk);
+    return 1;
+  }
+  printf("PASS %-28s %s\n", test->name, test->source);
   return 0;
 }
 
-int test_exprstmt() {
-  Chunk expected;
-  initChunk(&expected);
-  writeChunk(&expected, OP_CONSTANT, 1);
-  int lhs = addConstant(&expected, NUMBER_VAL(1));
-  writeChunk(&expected, lhs, 1);
-  writeChunk(&expected, OP_CONSTANT, 1);
-  int rhs = addConstant(&expected, NUMBER_VAL(2));
-  writeChunk(&expected, rhs, 1);
-  writeChunk(&expected, OP_ADD, 1);
-  writeChunk(&expected, OP_POP, 1);
-  writeChunk(&expected, OP_RETURN, 1);
+int runCompilerTests(void) {
+  initVM();
 
-  int result = test_expr("1 + 2;", &expected);
-  freeChunk(&expected);
-  return result;
-}
+  const CompilerTest tests[] = {
+      {
+          .name = "expression statement",
+          .source = "1 + 2;",
+          BYTES(OP_CONSTANT, 0, OP_CONSTANT, 1, OP_ADD, OP_POP, OP_NIL,
+                OP_RETURN),
+          CONSTANTS(NUMBER_VAL(1), NUMBER_VAL(2)),
+      },
+      {
+          .name = "print statement",
+          .source = "print 1 + 2;",
+          BYTES(OP_CONSTANT, 0, OP_CONSTANT, 1, OP_ADD, OP_PRINT, OP_NIL,
+                OP_RETURN),
+          CONSTANTS(NUMBER_VAL(1), NUMBER_VAL(2)),
+      },
+      {
+          .name = "local var declaration",
+          .source = "{ var a = 1; }",
+          BYTES(OP_CONSTANT, 0, OP_POP, OP_NIL, OP_RETURN),
+          CONSTANTS(NUMBER_VAL(1)),
+      },
+      {
+          .name = "local var get",
+          .source = "{ var a = 1; print a; }",
+          BYTES(OP_CONSTANT, 0, OP_GET_LOCAL, 1, OP_PRINT, OP_POP, OP_NIL,
+                OP_RETURN),
+          CONSTANTS(NUMBER_VAL(1)),
+      },
+      {
+          .name = "local var set",
+          .source = "{ var a = 1; a = 2; }",
+          BYTES(OP_CONSTANT, 0, OP_CONSTANT, 1, OP_SET_LOCAL, 1, OP_POP,
+                OP_POP, OP_NIL, OP_RETURN),
+          CONSTANTS(NUMBER_VAL(1), NUMBER_VAL(2)),
+      },
+      {
+          .name = "nested scopes",
+          .source = "{ var a = 1; { var b = 2; } }",
+          BYTES(OP_CONSTANT, 0, OP_CONSTANT, 1, OP_POP, OP_POP, OP_NIL,
+                OP_RETURN),
+          CONSTANTS(NUMBER_VAL(1), NUMBER_VAL(2)),
+      },
+      {
+          .name = "if without else",
+          .source = "if (true) print 1;",
+          BYTES(OP_TRUE,                      // condition
+                OP_JUMP_IF_FALSE, 0, 7,       // over then branch
+                OP_POP, OP_CONSTANT, 0, OP_PRINT,
+                OP_JUMP, 0, 1,                // over the else-side pop
+                OP_POP, OP_NIL, OP_RETURN),
+          CONSTANTS(NUMBER_VAL(1)),
+      },
+      {
+          .name = "if with else",
+          .source = "if (true) print 1; else print 2;",
+          BYTES(OP_TRUE,                      // condition
+                OP_JUMP_IF_FALSE, 0, 7,       // over then branch
+                OP_POP, OP_CONSTANT, 0, OP_PRINT,
+                OP_JUMP, 0, 4,                // over else branch
+                OP_POP, OP_CONSTANT, 1, OP_PRINT, OP_NIL, OP_RETURN),
+          CONSTANTS(NUMBER_VAL(1), NUMBER_VAL(2)),
+      },
+      {
+          .name = "and",
+          .source = "true and false;",
+          BYTES(OP_TRUE,                      // left operand
+                OP_JUMP_IF_FALSE, 0, 2,       // short-circuit over right
+                OP_POP, OP_FALSE,             // discard left, right operand
+                OP_POP, OP_NIL, OP_RETURN),
+      },
+      {
+          .name = "or",
+          .source = "false or true;",
+          BYTES(OP_FALSE,                     // left operand
+                OP_JUMP_IF_FALSE, 0, 3,       // falsy: fall into right
+                OP_JUMP, 0, 2,                // truthy: short-circuit
+                OP_POP, OP_TRUE,              // discard left, right operand
+                OP_POP, OP_NIL, OP_RETURN),
+      },
+      {
+          .name = "while",
+          .source = "while (false) print 1;",
+          BYTES(OP_FALSE,                     // condition (loop start)
+                OP_JUMP_IF_FALSE, 0, 7,       // exit loop
+                OP_POP, OP_CONSTANT, 0, OP_PRINT,
+                OP_LOOP, 0, 11,               // back to condition
+                OP_POP, OP_NIL, OP_RETURN),
+          CONSTANTS(NUMBER_VAL(1)),
+      },
+      {
+          .name = "for with var initializer",
+          .source = "for (var i = 0; i < 1; i = i + 1) print i;",
+          BYTES(OP_CONSTANT, 0,               // var i = 0 (slot 1)
+                OP_GET_LOCAL, 1,              // condition: i < 1
+                OP_CONSTANT, 1, OP_LESS,
+                OP_JUMP_IF_FALSE, 0, 21,      // exit loop
+                OP_POP,
+                OP_JUMP, 0, 11,               // over increment to body
+                OP_GET_LOCAL, 1,              // increment: i = i + 1
+                OP_CONSTANT, 2, OP_ADD, OP_SET_LOCAL, 1, OP_POP,
+                OP_LOOP, 0, 23,               // back to condition
+                OP_GET_LOCAL, 1, OP_PRINT,    // body: print i
+                OP_LOOP, 0, 17,               // back to increment
+                OP_POP,                       // condition
+                OP_POP,                       // slot for i leaves scope
+                OP_NIL, OP_RETURN),
+          CONSTANTS(NUMBER_VAL(0), NUMBER_VAL(1), NUMBER_VAL(1)),
+      },
+      {
+          .name = "call",
+          .source = "f(1);",
+          BYTES(OP_GET_GLOBAL, 0, OP_CONSTANT, 1, OP_CALL, 1, OP_POP, OP_NIL,
+                OP_RETURN),
+          CONSTANTS(OBJ_VAL(copyString("f", 1)), NUMBER_VAL(1)),
+      },
+  };
 
-int test_printstmt() {
-  Chunk expected;
-  initChunk(&expected);
-  writeChunk(&expected, OP_CONSTANT, 1);
-  int lhs = addConstant(&expected, NUMBER_VAL(1));
-  writeChunk(&expected, lhs, 1);
-  writeChunk(&expected, OP_CONSTANT, 1);
-  int rhs = addConstant(&expected, NUMBER_VAL(2));
-  writeChunk(&expected, rhs, 1);
-  writeChunk(&expected, OP_ADD, 1);
-  writeChunk(&expected, OP_PRINT, 1);
-  writeChunk(&expected, OP_RETURN, 1);
+  int total = (int)(sizeof(tests) / sizeof(tests[0]));
+  int failed = 0;
+  for (int i = 0; i < total; i++) {
+    failed += runTest(&tests[i]);
+  }
 
-  int result = test_expr("print 1 + 2;", &expected);
-  freeChunk(&expected);
-  return result;
-}
-
-int test_local_var_decl() {
-  Chunk expected;
-  initChunk(&expected);
-  writeChunk(&expected, OP_CONSTANT, 1);
-  int idx = addConstant(&expected, NUMBER_VAL(1));
-  writeChunk(&expected, idx, 1);
-  writeChunk(&expected, OP_POP, 1);
-  writeChunk(&expected, OP_RETURN, 1);
-
-  int result = test_expr("{ var a = 1; }", &expected);
-  freeChunk(&expected);
-  return result;
-}
-
-int test_local_var_get() {
-  Chunk expected;
-  initChunk(&expected);
-  writeChunk(&expected, OP_CONSTANT, 1);
-  int idx = addConstant(&expected, NUMBER_VAL(1));
-  writeChunk(&expected, idx, 1);
-  writeChunk(&expected, OP_GET_LOCAL, 1);
-  writeChunk(&expected, 0, 1);
-  writeChunk(&expected, OP_PRINT, 1);
-  writeChunk(&expected, OP_POP, 1);
-  writeChunk(&expected, OP_RETURN, 1);
-
-  int result = test_expr("{ var a = 1; print a; }", &expected);
-  freeChunk(&expected);
-  return result;
-}
-
-int test_local_var_set() {
-  Chunk expected;
-  initChunk(&expected);
-  writeChunk(&expected, OP_CONSTANT, 1);
-  int idx1 = addConstant(&expected, NUMBER_VAL(1));
-  writeChunk(&expected, idx1, 1);
-  writeChunk(&expected, OP_CONSTANT, 1);
-  int idx2 = addConstant(&expected, NUMBER_VAL(2));
-  writeChunk(&expected, idx2, 1);
-  writeChunk(&expected, OP_SET_LOCAL, 1);
-  writeChunk(&expected, 0, 1);
-  writeChunk(&expected, OP_POP, 1);
-  writeChunk(&expected, OP_POP, 1);
-  writeChunk(&expected, OP_RETURN, 1);
-
-  int result = test_expr("{ var a = 1; a = 2; }", &expected);
-  freeChunk(&expected);
-  return result;
-}
-
-int test_nested_scope() {
-  Chunk expected;
-  initChunk(&expected);
-  writeChunk(&expected, OP_CONSTANT, 1);
-  int idx1 = addConstant(&expected, NUMBER_VAL(1));
-  writeChunk(&expected, idx1, 1);
-  writeChunk(&expected, OP_CONSTANT, 1);
-  int idx2 = addConstant(&expected, NUMBER_VAL(2));
-  writeChunk(&expected, idx2, 1);
-  writeChunk(&expected, OP_POP, 1);
-  writeChunk(&expected, OP_POP, 1);
-  writeChunk(&expected, OP_RETURN, 1);
-
-  int result = test_expr("{ var a = 1; { var b = 2; } }", &expected);
-  freeChunk(&expected);
-  return result;
-}
-
-int test_if_then() {
-  Chunk expected;
-  initChunk(&expected);
-  // condition
-  writeChunk(&expected, OP_TRUE, 1);
-  // JUMP_IF_FALSE over then-body (offset 7 bytes ahead)
-  writeChunk(&expected, OP_JUMP_IF_FALSE, 1);
-  writeChunk(&expected, 0, 1);
-  writeChunk(&expected, 7, 1);
-  // then branch: pop condition, print 1
-  writeChunk(&expected, OP_POP, 1);
-  writeChunk(&expected, OP_CONSTANT, 1);
-  int idx = addConstant(&expected, NUMBER_VAL(1));
-  writeChunk(&expected, idx, 1);
-  writeChunk(&expected, OP_PRINT, 1);
-  // JUMP over else-pop (offset 1 byte ahead)
-  writeChunk(&expected, OP_JUMP, 1);
-  writeChunk(&expected, 0, 1);
-  writeChunk(&expected, 1, 1);
-  // else branch: pop condition (no else body)
-  writeChunk(&expected, OP_POP, 1);
-  writeChunk(&expected, OP_RETURN, 1);
-
-  int result = test_expr("if (true) print 1;", &expected);
-  freeChunk(&expected);
-  return result;
-}
-
-int test_if_else() {
-  Chunk expected;
-  initChunk(&expected);
-  // condition
-  writeChunk(&expected, OP_TRUE, 1);
-  // JUMP_IF_FALSE over then-body (offset 7 bytes ahead)
-  writeChunk(&expected, OP_JUMP_IF_FALSE, 1);
-  writeChunk(&expected, 0, 1);
-  writeChunk(&expected, 7, 1);
-  // then branch: pop condition, print 1
-  writeChunk(&expected, OP_POP, 1);
-  writeChunk(&expected, OP_CONSTANT, 1);
-  int idx1 = addConstant(&expected, NUMBER_VAL(1));
-  writeChunk(&expected, idx1, 1);
-  writeChunk(&expected, OP_PRINT, 1);
-  // JUMP over else-body (offset 4 bytes ahead)
-  writeChunk(&expected, OP_JUMP, 1);
-  writeChunk(&expected, 0, 1);
-  writeChunk(&expected, 4, 1);
-  // else branch: pop condition, print 2
-  writeChunk(&expected, OP_POP, 1);
-  writeChunk(&expected, OP_CONSTANT, 1);
-  int idx2 = addConstant(&expected, NUMBER_VAL(2));
-  writeChunk(&expected, idx2, 1);
-  writeChunk(&expected, OP_PRINT, 1);
-  writeChunk(&expected, OP_RETURN, 1);
-
-  int result = test_expr("if (true) print 1; else print 2;", &expected);
-  freeChunk(&expected);
-  return result;
-}
-
-int test_and() {
-  Chunk expected;
-  initChunk(&expected);
-  // left operand
-  writeChunk(&expected, OP_TRUE, 1);
-  // JUMP_IF_FALSE to end, skipping OP_POP + right operand (offset 2 bytes ahead)
-  writeChunk(&expected, OP_JUMP_IF_FALSE, 1);
-  writeChunk(&expected, 0, 1);
-  writeChunk(&expected, 2, 1);
-  // pop left operand and evaluate right
-  writeChunk(&expected, OP_POP, 1);
-  writeChunk(&expected, OP_FALSE, 1);
-  // expression statement pop + return
-  writeChunk(&expected, OP_POP, 1);
-  writeChunk(&expected, OP_RETURN, 1);
-
-  int result = test_expr("true and false;", &expected);
-  freeChunk(&expected);
-  return result;
-}
-
-int test_or() {
-  Chunk expected;
-  initChunk(&expected);
-  // left operand
-  writeChunk(&expected, OP_FALSE, 1);
-  // JUMP_IF_FALSE past the unconditional jump (offset 3 bytes ahead)
-  writeChunk(&expected, OP_JUMP_IF_FALSE, 1);
-  writeChunk(&expected, 0, 1);
-  writeChunk(&expected, 3, 1);
-  // left was truthy: JUMP over OP_POP + right operand (offset 2 bytes ahead)
-  writeChunk(&expected, OP_JUMP, 1);
-  writeChunk(&expected, 0, 1);
-  writeChunk(&expected, 2, 1);
-  // left was falsy: pop left, evaluate right
-  writeChunk(&expected, OP_POP, 1);
-  writeChunk(&expected, OP_TRUE, 1);
-  // expression statement pop + return
-  writeChunk(&expected, OP_POP, 1);
-  writeChunk(&expected, OP_RETURN, 1);
-
-  int result = test_expr("false or true;", &expected);
-  freeChunk(&expected);
-  return result;
-}
-
-int test_while() {
-  Chunk expected;
-  initChunk(&expected);
-  // loopStart = 0; condition: false
-  writeChunk(&expected, OP_FALSE, 1);
-  // JUMP_IF_FALSE over pop+body+loop (offset 7)
-  writeChunk(&expected, OP_JUMP_IF_FALSE, 1);
-  writeChunk(&expected, 0, 1);
-  writeChunk(&expected, 7, 1);
-  // truthy path: pop condition, body: print 1
-  writeChunk(&expected, OP_POP, 1);
-  writeChunk(&expected, OP_CONSTANT, 1);
-  int idx = addConstant(&expected, NUMBER_VAL(1));
-  writeChunk(&expected, idx, 1);
-  writeChunk(&expected, OP_PRINT, 1);
-  // loop back to loopStart=0; after emitting OP_LOOP count=9, offset=9-0+2=11
-  writeChunk(&expected, OP_LOOP, 1);
-  writeChunk(&expected, 0, 1);
-  writeChunk(&expected, 11, 1);
-  // falsy path: pop condition
-  writeChunk(&expected, OP_POP, 1);
-  writeChunk(&expected, OP_RETURN, 1);
-
-  int result = test_expr("while (false) print 1;", &expected);
-  freeChunk(&expected);
-  return result;
-}
-
-int test_for_with_var() {
-  Chunk expected;
-  initChunk(&expected);
-  // initializer: var i = 0
-  writeChunk(&expected, OP_CONSTANT, 1);
-  int idx0 = addConstant(&expected, NUMBER_VAL(0));
-  writeChunk(&expected, idx0, 1);
-  // loopStart=2; condition: i < 1
-  writeChunk(&expected, OP_GET_LOCAL, 1);
-  writeChunk(&expected, 0, 1);
-  writeChunk(&expected, OP_CONSTANT, 1);
-  int idx1 = addConstant(&expected, NUMBER_VAL(1));
-  writeChunk(&expected, idx1, 1);
-  writeChunk(&expected, OP_LESS, 1);
-  // JUMP_IF_FALSE to exit (exitJump=8); patched to offset 21
-  writeChunk(&expected, OP_JUMP_IF_FALSE, 1);
-  writeChunk(&expected, 0, 1);
-  writeChunk(&expected, 21, 1);
-  // truthy: pop condition
-  writeChunk(&expected, OP_POP, 1);
-  // JUMP over increment to body (bodyJump=12); patched to offset 11
-  writeChunk(&expected, OP_JUMP, 1);
-  writeChunk(&expected, 0, 1);
-  writeChunk(&expected, 11, 1);
-  // incrementStart=14; increment: i = i + 1
-  writeChunk(&expected, OP_GET_LOCAL, 1);
-  writeChunk(&expected, 0, 1);
-  writeChunk(&expected, OP_CONSTANT, 1);
-  int idx2 = addConstant(&expected, NUMBER_VAL(1));
-  writeChunk(&expected, idx2, 1);
-  writeChunk(&expected, OP_ADD, 1);
-  writeChunk(&expected, OP_SET_LOCAL, 1);
-  writeChunk(&expected, 0, 1);
-  writeChunk(&expected, OP_POP, 1);
-  // loop to condition at loopStart=2; after emitting OP_LOOP count=23, offset=23-2+2=23
-  writeChunk(&expected, OP_LOOP, 1);
-  writeChunk(&expected, 0, 1);
-  writeChunk(&expected, 23, 1);
-  // body (starts at 25): print i
-  writeChunk(&expected, OP_GET_LOCAL, 1);
-  writeChunk(&expected, 0, 1);
-  writeChunk(&expected, OP_PRINT, 1);
-  // loop to increment at incrementStart=14; after emitting OP_LOOP count=29, offset=29-14+2=17
-  writeChunk(&expected, OP_LOOP, 1);
-  writeChunk(&expected, 0, 1);
-  writeChunk(&expected, 17, 1);
-  // falsy: pop condition; endScope: pop local i
-  writeChunk(&expected, OP_POP, 1);
-  writeChunk(&expected, OP_POP, 1);
-  writeChunk(&expected, OP_RETURN, 1);
-
-  int result = test_expr("for (var i = 0; i < 1; i = i + 1) print i;", &expected);
-  freeChunk(&expected);
-  return result;
+  printf("\ncompiler tests: %d passed, %d failed\n", total - failed, failed);
+  freeVM();
+  return failed;
 }
