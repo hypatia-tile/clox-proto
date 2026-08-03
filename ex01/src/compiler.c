@@ -83,6 +83,15 @@ static Parser parser;
 static Compiler *current = NULL;
 // static Chunk *compilingChunk;
 
+typedef enum {
+  STORAGE_LOCAL,
+  STORAGE_GLOBAL,
+} StorageClass;
+
+static StorageClass currentStorage(void) {
+  return current->scopeDepth == 0 ? STORAGE_GLOBAL : STORAGE_LOCAL;
+}
+
 static Chunk *currentChunk() { return &current->function->chunk; }
 
 static void errorAt(Token *token, const char *message) {
@@ -357,46 +366,58 @@ static void addLocal(Token name) {
 }
 
 static void declareVariable() {
-  if (current->scopeDepth == 0)
+  switch (currentStorage()) {
+  case STORAGE_GLOBAL:
     return;
+  case STORAGE_LOCAL: {
+    Token *name = &parser.previous;
 
-  Token *name = &parser.previous;
+    for (int i = current->localCount - 1; i >= 0; i--) {
+      Local *local = &current->locals[i];
+      if (local->depth != -1 && local->depth < current->scopeDepth) {
+        break;
+      }
 
-  for (int i = current->localCount - 1; i >= 0; i--) {
-    Local *local = &current->locals[i];
-    if (local->depth != -1 && local->depth < current->scopeDepth) {
-      break;
+      if (identifiersEqual(name, &local->name)) {
+        error("Already a variable with this name in this scope.");
+      }
     }
-
-    if (identifiersEqual(name, &local->name)) {
-      error("Already a variable with this name in this scope.");
-    }
+    addLocal(*name);
   }
-  addLocal(*name);
+  }
 }
 
 static uint8_t parseVariable(const char *errorMessage) {
   consume(TOKEN_IDENTIFIER, errorMessage);
 
   declareVariable();
-  if (current->scopeDepth > 0)
+  switch (currentStorage()) {
+  case STORAGE_LOCAL:
     return 0;
-
-  return identifierConstant(&parser.previous);
+  case STORAGE_GLOBAL:
+    return identifierConstant(&parser.previous);
+  }
+  __builtin_unreachable();
 }
 
 static void markInitialized() {
-  if (current->scopeDepth == 0)
+  switch (currentStorage()) {
+  case STORAGE_GLOBAL:
     return;
-  current->locals[current->localCount - 1].depth = current->scopeDepth;
+  case STORAGE_LOCAL:
+    current->locals[current->localCount - 1].depth = current->scopeDepth;
+  }
 }
 
 static void defineVariable(uint8_t global) {
-  if (current->scopeDepth > 0) {
+  switch (currentStorage()) {
+  case STORAGE_LOCAL:
     markInitialized();
     return;
+  case STORAGE_GLOBAL:
+    emitBytes(OP_DEFINE_GLOBAL, global);
+    return;
   }
-  emitBytes(OP_DEFINE_GLOBAL, global);
 }
 
 static uint8_t argumentList() {
