@@ -7,11 +7,14 @@
 #include "chunk.h"
 #include "common.h"
 #include "compiler.h"
-#include "debug.h"
 #include "memory.h"
 #include "object.h"
 #include "value.h"
 #include "vm.h"
+
+#ifdef DEBUG_TRACE_EXECUTION
+#include "debug.h"
+#endif
 
 VM vm;
 
