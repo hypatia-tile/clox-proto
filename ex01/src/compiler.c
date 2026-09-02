@@ -370,7 +370,7 @@ static int addUpvalue(Compiler *compiler, uint8_t index, bool isLocal) {
   }
 
   if (upvalueCount == UINT8_COUNT) {
-    error("Too many closure variable in function.");
+    error("Too many closure variables in function.");
     return 0;
   }
 
