@@ -124,7 +124,7 @@ void printObject(Value value) {
   case OBJ_UPVALUE:
     // This is not useful to end users. Upvalues are objects only so
     // that we can take advantage of the VM's memory management. They
-    // aren't first-class values that a Lox user can dirrectly access
+    // aren't first-class values that a Lox user can directly access
     // in a program. So this code will never actually execute... but it
     // keeps the compiler from yelling at us about an unhandled switch
     // case, so here we are.
