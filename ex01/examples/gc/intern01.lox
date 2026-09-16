@@ -1,0 +1,11 @@
+// The same text reached two ways: a literal, and a string built at runtime.
+// Interning has to find the existing entry, and the table may grow while the
+// candidate string is not yet reachable from any root.
+var built = "ab" + "cd";
+print built;
+// expect: abcd
+print built == "abcd";
+// expect: true
+var again = "ab" + "cd";
+print again == built;
+// expect: true

@@ -27,6 +27,10 @@ jobs:
         timeout-minutes: 5
         run: make tests
 
+      - name: Run examples under stress GC
+        timeout-minutes: 5
+        run: make gc-tests
+
       - name: Run executable
         timeout-minutes: 5
         run: make run

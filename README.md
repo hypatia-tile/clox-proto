@@ -34,6 +34,8 @@ The release build compiles with `-Wall -Wextra -Werror -std=c11`.
 ```sh
 make test       # unit tests: compile Lox snippets and compare emitted bytecode
 make tests      # end-to-end tests: run every examples/*.lox and check // expect: output
+make gc-tests   # the same examples plus examples/gc/, against a build that
+                # collects on every allocation (DEBUG_STRESS_GC)
 ```
 
 - `make test` builds `test/bin/test_ex01` from `test/src/` linked against the
@@ -42,12 +44,21 @@ make tests      # end-to-end tests: run every examples/*.lox and check // expect
   actual disassembly side by side.
 - `make tests` runs `scripts/test_examples.sh` against the release binary.
   Each `examples/*.lox` file declares its expected stdout with `// expect:`
-  comment lines.
+  comment lines. The script takes the binary followed by one or more
+  directories (`test_examples.sh <binary> [dir...]`, default `examples`).
+- `make gc-tests` builds with `GC_FLAGS` (`-DDEBUG_STRESS_GC`) into `gc/` and
+  runs both `examples/` and `examples/gc/`. `examples/gc/` holds programs whose
+  allocation patterns are the ones a collector gets wrong: string
+  concatenation, a constant table that has to grow, interning, and a closure
+  outliving the scope it captured. GC logging is deliberately *not* on here,
+  because the log lines would be compared against `// expect:` output.
 
 ## Debugging
 
 ```sh
 make debug      # build debug/bin/ex01 and launch it under lldb
+make gc-run     # run one file with stress collection and GC logging on
+make gc-run inputfile=examples/gc/concat01.lox
 ```
 
 The debug build (`DEBUG_FLAGS` in the Makefile) compiles with `-g -O0` and
@@ -56,3 +67,7 @@ defines `DEBUG_PRINT_CODE` (disassemble each chunk after compiling) and
 These macros are **not** defined in the release build, so `make run` and the
 test targets produce clean output; use the debug build when you want to see
 the emitted bytecode or execution traces.
+
+`make gc-run` builds a third configuration into `gclog/` with both
+`GC_FLAGS` (`-DDEBUG_STRESS_GC`) and `GCLOG_FLAGS` (`-DDEBUG_LOG_GC`), and no
+instruction tracing — the output is the collector's own log and nothing else.

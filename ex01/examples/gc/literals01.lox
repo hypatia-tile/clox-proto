@@ -1,0 +1,24 @@
+// More than eight distinct string constants in one function, so the constant
+// array has to grow while a fresh string is in flight.
+print "alpha";
+// expect: alpha
+print "bravo";
+// expect: bravo
+print "charlie";
+// expect: charlie
+print "delta";
+// expect: delta
+print "echo";
+// expect: echo
+print "foxtrot";
+// expect: foxtrot
+print "golf";
+// expect: golf
+print "hotel";
+// expect: hotel
+print "india";
+// expect: india
+print "juliett";
+// expect: juliett
+print "kilo";
+// expect: kilo
