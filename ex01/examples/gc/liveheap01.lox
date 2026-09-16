@@ -1,0 +1,18 @@
+// A long chain of allocations with one value that must survive all of them,
+// held only by a global. Everything else is garbage as soon as it is made.
+var keep = "seed";
+var i = 0;
+while (i < 30) {
+  var tmp = "tmp" + "-" + "value";
+  i = i + 1;
+}
+print keep;
+// expect: seed
+
+fun concatTwice(x) {
+  return x + x;
+}
+print concatTwice("ab");
+// expect: abab
+print concatTwice(concatTwice("z"));
+// expect: zzzz

@@ -1,0 +1,8 @@
+// Concatenation allocates a new string while both operands are already off
+// the stack. Nothing else references them.
+var a = "st";
+var b = "ri";
+print a + b + "ng";
+// expect: string
+print "one" + " " + "two" + " " + "three";
+// expect: one two three

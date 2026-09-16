@@ -1,0 +1,24 @@
+// A closure outliving the scope it captured, called after many allocations
+// have happened. Its upvalue is reachable only through the closure.
+fun makeCounter() {
+  var count = 0;
+  fun increment() {
+    count = count + 1;
+    return count;
+  }
+  return increment;
+}
+
+var counter = makeCounter();
+var noise = "";
+var i = 0;
+while (i < 20) {
+  noise = "x" + noise;
+  i = i + 1;
+}
+print counter();
+// expect: 1
+print counter();
+// expect: 2
+print noise;
+// expect: xxxxxxxxxxxxxxxxxxxx
