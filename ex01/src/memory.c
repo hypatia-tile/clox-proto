@@ -4,9 +4,18 @@
 #include "object.h"
 #include "vm.h"
 
+#ifdef DEBUG_LOG_GC
+#include "debug.h"
+#include <stdio.h>
+#endif // DEBUG_LOG_GC
+
 void *reallocate(void *pointer, size_t oldSize, size_t newSize) {
+  if (newSize > oldSize) {
+#ifdef DEBUG_STRESS_GC
+    collectGarbage();
+#endif // DEBUG_STRESS_GC
+  }
   if (newSize == 0) {
-    (void)oldSize;
     free(pointer);
     return NULL;
   }
@@ -46,6 +55,16 @@ static void freeObject(Obj *object) {
     FREE(ObjUpvalue, object);
     break;
   }
+}
+
+void collectGarbage() {
+#ifdef DEBUG_LOG_GC
+  printf("-- gc begin\n");
+#endif // DEBUG_LOG_GC
+
+#ifdef DEBUG_LOG_GC
+  printf("-- gc end\n");
+#endif // DEBUG_LOG_GC
 }
 
 void freeObjects() {
