@@ -41,7 +41,7 @@ void markObject(Obj *object) {
   object->isMarked = true;
 
   if (vm.grayCapacity < vm.grayCount + 1) {
-    vm.grayCount = GROW_CAPACITY(vm.grayCapacity);
+    vm.grayCapacity = GROW_CAPACITY(vm.grayCapacity);
     vm.grayStack =
         (Obj **)realloc(vm.grayStack, sizeof(Obj *) * vm.grayCapacity);
 
@@ -57,7 +57,7 @@ void markValue(Value value) {
     markObject(AS_OBJ(value));
 }
 
-void markArray(ValueArray *array) {
+static void markArray(ValueArray *array) {
   for (int i = 0; i < array->count; i++) {
     markValue(array->values[i]);
   }
