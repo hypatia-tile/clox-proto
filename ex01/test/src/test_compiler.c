@@ -33,6 +33,8 @@ typedef struct {
 //    locals start at slot 1.
 //  - Chapter 25: a function declaration emits OP_CLOSURE, followed by two
 //    bytes per upvalue (isLocal flag, then index).
+//  - Chapter 27: a class declaration emits OP_CLASS with the name's constant
+//    index, then binds the name the same way `var` does.
 typedef struct {
   const char *name;
   const char *source;
@@ -378,6 +380,33 @@ int runCompilerTests(void) {
           BYTES(OP_CONSTANT, 0, OP_CLOSURE, 1, 1, 1, OP_POP, OP_CLOSE_UPVALUE,
                 OP_NIL, OP_RETURN),
           CONSTANTS(VALUE(NUMBER_VAL(1)), FUNCTION("inner", 0, 1)),
+      },
+      // --- Chapter 27: classes ----------------------------------------
+      {
+          // A class declaration is a variable declaration whose initialiser
+          // is OP_CLASS: the class object is built on the stack first, then
+          // bound to the name like any other global.
+          .name = "class declaration",
+          .source = "class Foo {}",
+          BYTES(OP_CLASS, 0, OP_DEFINE_GLOBAL, 0, OP_NIL, OP_RETURN),
+          CONSTANTS(VALUE(OBJ_VAL(copyString("Foo", 3)))),
+      },
+      {
+          // In a local scope there is no OP_DEFINE_GLOBAL: the class object
+          // stays in its stack slot, and the block's end pops it.
+          .name = "local class declaration",
+          .source = "{ class Foo {} }",
+          BYTES(OP_CLASS, 0, OP_POP, OP_NIL, OP_RETURN),
+          CONSTANTS(VALUE(OBJ_VAL(copyString("Foo", 3)))),
+      },
+      {
+          // The name resolves as a local, which it only can if the class
+          // declaration declared it before emitting OP_CLASS.
+          .name = "local class resolves as a local",
+          .source = "{ class Foo {} print Foo; }",
+          BYTES(OP_CLASS, 0, OP_GET_LOCAL, 1, OP_PRINT, OP_POP, OP_NIL,
+                OP_RETURN),
+          CONSTANTS(VALUE(OBJ_VAL(copyString("Foo", 3)))),
       },
   };
 
