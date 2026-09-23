@@ -33,6 +33,10 @@ GCLOG_OBJ_DIR = gclog/obj
 GCLOG_BIN_DIR = gclog/bin
 GCLOG_OBJ_FILES = $(patsubst $(SRC_DIR)/%.c,$(GCLOG_OBJ_DIR)/%.o,$(SRC_FILES))
 GCLOG_TARGET = $(GCLOG_BIN_DIR)/ex01
+HEAP_OBJ_DIR = heap/obj
+HEAP_BIN_DIR = heap/bin
+HEAP_OBJ_FILES = $(patsubst $(SRC_DIR)/%.c,$(HEAP_OBJ_DIR)/%.o,$(SRC_FILES))
+HEAP_TARGET = $(HEAP_BIN_DIR)/ex01
 GCTRACE_OBJ_DIR = gctrace/obj
 GCTRACE_BIN_DIR = gctrace/bin
 GCTRACE_OBJ_FILES = $(patsubst $(SRC_DIR)/%.c,$(GCTRACE_OBJ_DIR)/%.o,$(SRC_FILES))
@@ -71,6 +75,10 @@ $(GCLOG_TARGET): $(GCLOG_OBJ_FILES)
 	@mkdir -p $(GCLOG_BIN_DIR)
 	@$(CC) -o $@ $^
 
+$(HEAP_TARGET): $(HEAP_OBJ_FILES)
+	@mkdir -p $(HEAP_BIN_DIR)
+	@$(CC) -o $@ $^
+
 $(GCTRACE_TARGET): $(GCTRACE_OBJ_FILES)
 	@mkdir -p $(GCTRACE_BIN_DIR)
 	@$(CC) $(TRACE_FLAGS) -o $@ $^
@@ -90,6 +98,10 @@ $(GC_OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 $(GCLOG_OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(GCLOG_OBJ_DIR)
 	@$(CC) -c -I$(INC_DIR) $(CFLAGS) $(GC_FLAGS) $(GCLOG_FLAGS) -o $@ $<
+
+$(HEAP_OBJ_DIR)/%.o: $(SRC_DIR)/%.c
+	@mkdir -p $(HEAP_OBJ_DIR)
+	@$(CC) -c -I$(INC_DIR) $(CFLAGS) $(GCLOG_FLAGS) -o $@ $<
 
 $(GCTRACE_OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(GCTRACE_OBJ_DIR)
@@ -113,6 +125,12 @@ gc-tests: $(GC_TARGET)
 # One file under stress collection with the GC log on, to watch what the
 # collector marks, blackens and frees.
 gc-run: $(GCLOG_TARGET)
+	@./$< $(inputfile)
+
+# The GC log WITHOUT stress collection, so the collector runs on whatever policy
+# the code actually implements rather than on every allocation. This is the only
+# configuration in which a heap-growth threshold is observable.
+heap-run: $(HEAP_TARGET)
 	@./$< $(inputfile)
 
 # The same binary with DEBUG_PRINT_CODE and DEBUG_TRACE_EXECUTION as well, so
@@ -143,6 +161,9 @@ gc-log: $(GCLOG_TARGET)
 gc-trace-log: $(GCTRACE_TARGET)
 	$(call capture_log,$(GCTRACE_TARGET))
 
+heap-log: $(HEAP_TARGET)
+	$(call capture_log,$(HEAP_TARGET))
+
 debug: $(DEBUG_TARGET)
 	@sh -c 'if [ "$$(uname -s)" = Darwin ]; then exec xcrun lldb "$$1"; else exec lldb "$$1"; fi' sh "$<"
 
@@ -155,7 +176,9 @@ repl: $(TARGET)
 clean:
 	@rm -rf $(BIN_DIR) $(OBJ_DIR) $(TEST_OBJ_DIR) $(TEST_BIN_DIR) \
 		$(DEBUG_OBJ_DIR) $(DEBUG_BIN_DIR) $(GC_OBJ_DIR) $(GC_BIN_DIR) \
-		$(GCLOG_OBJ_DIR) $(GCLOG_BIN_DIR) $(GCTRACE_OBJ_DIR) $(GCTRACE_BIN_DIR)
+		$(GCLOG_OBJ_DIR) $(GCLOG_BIN_DIR) $(GCTRACE_OBJ_DIR) $(GCTRACE_BIN_DIR) \
+		$(HEAP_OBJ_DIR) $(HEAP_BIN_DIR)
 
-.PHONY: all run clean test tests gc-tests gc-run gc-log gc-trace gc-trace-log repl debug
+.PHONY: all run clean test tests gc-tests gc-run gc-log gc-trace gc-trace-log \
+	heap-run heap-log repl debug
 
