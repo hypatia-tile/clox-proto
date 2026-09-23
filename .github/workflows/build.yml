@@ -2,6 +2,9 @@ name: C build
 
 on:
   pull_request:
+  push:
+    branches:
+      - 'section/**'
   workflow_dispatch:
 
 jobs:
