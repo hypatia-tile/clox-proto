@@ -1,0 +1,15 @@
+// A class declaration binds the class object to a name like any other
+// declaration. Nothing can be done with it yet beyond naming and printing it.
+class Foo {}
+print Foo;
+// expect: Foo
+
+var alias = Foo;
+print alias;
+// expect: Foo
+
+{
+  class Bar {}
+  print Bar;
+  // expect: Bar
+}
