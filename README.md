@@ -51,8 +51,9 @@ make gc-tests   # the same examples plus examples/gc/, against a build that
 - `make gc-tests` builds with `GC_FLAGS` (`-DDEBUG_STRESS_GC`) into `gc/` and
   runs both `examples/` and `examples/gc/`. `examples/gc/` holds programs whose
   allocation patterns are the ones a collector gets wrong: string
-  concatenation, a constant table that has to grow, interning, and a closure
-  outliving the scope it captured. GC logging is deliberately *not* on here,
+  concatenation, a constant table that has to grow, interning, a closure
+  outliving the scope it captured, and a heap that grows well past the
+  collector's initial threshold. GC logging is deliberately *not* on here,
   because the log lines would be compared against `// expect:` output.
 
 ## Debugging
@@ -65,6 +66,8 @@ make gc-log     # the same run, captured to gclog/gc.log
 make gc-log inputfile=examples/while01.lox logfile=/tmp/w.log
 make gc-trace   # GC log plus disassembly and execution tracing
 make gc-trace-log inputfile=examples/gc/concat01.lox logfile=/tmp/c.log
+make heap-run   # GC log WITHOUT stress collection
+make heap-log inputfile=examples/gc/heapgrow01.lox logfile=/tmp/h.log
 ```
 
 The debug build (`DEBUG_FLAGS` in the Makefile) compiles with `-g -O0` and
@@ -93,7 +96,13 @@ marking, so a stale object is *dereferenced* rather than merely written to.
 A program can therefore pass `make gc-tests` and still fault under
 `make gc-run`.
 
-`make gc-trace` is a fourth configuration, built into `gctrace/`: everything
+`make heap-run` builds into `heap/` with `GCLOG_FLAGS` and **not** `GC_FLAGS`:
+the log is on, stress collection is off, so the collector runs on whatever
+policy the code actually implements. Every other GC target collects on every
+allocation, which makes any heap-growth policy invisible — this is the only
+configuration in which one can be observed. `make heap-log` captures it.
+
+`make gc-trace` is a fifth configuration, built into `gctrace/`: everything
 `gclog/` has, plus `DEBUG_PRINT_CODE` and `DEBUG_TRACE_EXECUTION`, compiled
 `-g -O0` and without `-Werror` the way the debug build is. Use it when the
 question is *which instruction* provoked a collection — each `-- gc begin`

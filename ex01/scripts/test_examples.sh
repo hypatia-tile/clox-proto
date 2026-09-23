@@ -32,9 +32,12 @@ for dir in "${DIRS[@]}"; do
       continue
     fi
 
-    # Strip debug trace lines: chunk headers (== ...), instruction offsets (4 digits),
-    # stack trace lines (leading space), and blank lines.
-    actual=$(grep -Ev '^(==|[0-9]{4}| |$)' "$TMPFILE")
+    # Strip debug trace lines: chunk headers (== ...), disassembly lines (a
+    # four-digit offset followed by whitespace), stack trace lines (leading
+    # space), and blank lines. The offset pattern requires the trailing
+    # whitespace so that a program printing a four-digit number -- `print 3000;`
+    # -- is not silently swallowed.
+    actual=$(grep -Ev '^(==|[0-9]{4}[[:space:]]| |$)' "$TMPFILE")
 
     if [ "$expected" = "$actual" ]; then
       PASS=$((PASS + 1))

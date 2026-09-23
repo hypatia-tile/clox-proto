@@ -1,0 +1,14 @@
+// Enough distinct strings to carry the heap past the collector's initial
+// threshold, with only the newest one reachable at any moment. Every earlier
+// string is garbage the instant the next one is built.
+var s = "";
+var i = 0;
+while (i < 3000) {
+  s = s + "x";
+  i = i + 1;
+}
+print i;
+// expect: 3000
+var t = s + "!";
+print t == s;
+// expect: false
