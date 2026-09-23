@@ -7,6 +7,7 @@ GC_FLAGS = -DDEBUG_STRESS_GC
 GCLOG_FLAGS = -DDEBUG_LOG_GC
 
 inputfile := example/test.txt
+logfile := gclog/gc.log
 
 SRC_DIR = src
 OBJ_DIR = obj
@@ -96,6 +97,21 @@ gc-tests: $(GC_TARGET)
 gc-run: $(GCLOG_TARGET)
 	@./$< $(inputfile)
 
+# The same run, captured to a file. stdout is block-buffered whenever it is
+# not a terminal, so redirecting gc-run loses the entire buffer when the
+# program crashes -- which is exactly when the log is worth reading. stdbuf
+# turns buffering off so every line printed before the crash survives.
+gc-log: $(GCLOG_TARGET)
+	@mkdir -p $(dir $(logfile))
+	@if command -v stdbuf > /dev/null 2>&1; then \
+		stdbuf -o0 ./$< $(inputfile) > $(logfile) 2>&1; \
+	else \
+		echo "warning: stdbuf not found; a crash will truncate $(logfile)" >&2; \
+		./$< $(inputfile) > $(logfile) 2>&1; \
+	fi; \
+	status=$$?; \
+	echo "$(logfile): $$(wc -l < $(logfile) | tr -d ' ') lines, exit $$status"
+
 debug: $(DEBUG_TARGET)
 	@sh -c 'if [ "$$(uname -s)" = Darwin ]; then exec xcrun lldb "$$1"; else exec lldb "$$1"; fi' sh "$<"
 
@@ -110,5 +126,5 @@ clean:
 		$(DEBUG_OBJ_DIR) $(DEBUG_BIN_DIR) $(GC_OBJ_DIR) $(GC_BIN_DIR) \
 		$(GCLOG_OBJ_DIR) $(GCLOG_BIN_DIR)
 
-.PHONY: all run clean test tests gc-tests gc-run repl debug
+.PHONY: all run clean test tests gc-tests gc-run gc-log repl debug
 

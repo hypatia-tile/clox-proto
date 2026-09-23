@@ -59,6 +59,8 @@ make gc-tests   # the same examples plus examples/gc/, against a build that
 make debug      # build debug/bin/ex01 and launch it under lldb
 make gc-run     # run one file with stress collection and GC logging on
 make gc-run inputfile=examples/gc/concat01.lox
+make gc-log     # the same run, captured to gclog/gc.log
+make gc-log inputfile=examples/while01.lox logfile=/tmp/w.log
 ```
 
 The debug build (`DEBUG_FLAGS` in the Makefile) compiles with `-g -O0` and
@@ -71,3 +73,18 @@ the emitted bytecode or execution traces.
 `make gc-run` builds a third configuration into `gclog/` with both
 `GC_FLAGS` (`-DDEBUG_STRESS_GC`) and `GCLOG_FLAGS` (`-DDEBUG_LOG_GC`), and no
 instruction tracing — the output is the collector's own log and nothing else.
+
+`make gc-log` runs the same binary but captures the log to a file
+(`gclog/gc.log` by default, `logfile=` to change it) and prints the line count
+and exit status. Use it instead of redirecting `gc-run` yourself: a C program's
+stdout is block-buffered whenever it is not a terminal, so `make gc-run > f`
+and `make gc-run | tail` both come back **empty** if the program crashes — the
+buffered lines are lost with the process. `gc-log` runs under `stdbuf -o0`, so
+every line printed before a crash survives. That matters while debugging the
+collector, where a crashing run is exactly the one worth reading.
+
+A crashing run is also more likely under `gclog/` than under `gc/`: with
+`DEBUG_LOG_GC` on, `markObject()` calls `printValue()` on the object it is
+marking, so a stale object is *dereferenced* rather than merely written to.
+A program can therefore pass `make gc-tests` and still fault under
+`make gc-run`.
