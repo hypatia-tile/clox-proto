@@ -61,6 +61,8 @@ make gc-run     # run one file with stress collection and GC logging on
 make gc-run inputfile=examples/gc/concat01.lox
 make gc-log     # the same run, captured to gclog/gc.log
 make gc-log inputfile=examples/while01.lox logfile=/tmp/w.log
+make gc-trace   # GC log plus disassembly and execution tracing
+make gc-trace-log inputfile=examples/gc/concat01.lox logfile=/tmp/c.log
 ```
 
 The debug build (`DEBUG_FLAGS` in the Makefile) compiles with `-g -O0` and
@@ -88,3 +90,14 @@ A crashing run is also more likely under `gclog/` than under `gc/`: with
 marking, so a stale object is *dereferenced* rather than merely written to.
 A program can therefore pass `make gc-tests` and still fault under
 `make gc-run`.
+
+`make gc-trace` is a fourth configuration, built into `gctrace/`: everything
+`gclog/` has, plus `DEBUG_PRINT_CODE` and `DEBUG_TRACE_EXECUTION`, compiled
+`-g -O0` and without `-Werror` the way the debug build is. Use it when the
+question is *which instruction* provoked a collection — each `-- gc begin`
+lands in the middle of the traced instruction stream, with the value stack
+printed before every instruction, so it is visible whether an operand was
+still on the stack when the collector ran. It is far noisier than `gc-run`
+(hundreds of lines for a two-line program), so reach for it only once a
+smaller log has narrowed things down. `make gc-trace-log` captures it the same
+way `gc-log` does.
