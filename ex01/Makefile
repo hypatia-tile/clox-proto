@@ -5,6 +5,9 @@ DEBUG_FLAGS = -g -O0 -DDEBUG_PRINT_CODE -DDEBUG_TRACE_EXECUTION
 # stress the collector without GC log lines landing in the expected output.
 GC_FLAGS = -DDEBUG_STRESS_GC
 GCLOG_FLAGS = -DDEBUG_LOG_GC
+# The GC log plus the ordinary debug output, so a collection can be located in
+# the instruction stream that provoked it.
+TRACE_FLAGS = -g -O0 -DDEBUG_PRINT_CODE -DDEBUG_TRACE_EXECUTION
 
 inputfile := example/test.txt
 logfile := gclog/gc.log
@@ -27,6 +30,10 @@ GCLOG_OBJ_DIR = gclog/obj
 GCLOG_BIN_DIR = gclog/bin
 GCLOG_OBJ_FILES = $(patsubst $(SRC_DIR)/%.c,$(GCLOG_OBJ_DIR)/%.o,$(SRC_FILES))
 GCLOG_TARGET = $(GCLOG_BIN_DIR)/ex01
+GCTRACE_OBJ_DIR = gctrace/obj
+GCTRACE_BIN_DIR = gctrace/bin
+GCTRACE_OBJ_FILES = $(patsubst $(SRC_DIR)/%.c,$(GCTRACE_OBJ_DIR)/%.o,$(SRC_FILES))
+GCTRACE_TARGET = $(GCTRACE_BIN_DIR)/ex01
 TEST_SRC_DIR = test/src
 TEST_OBJ_DIR = test/obj
 TEST_BIN_DIR = test/bin
@@ -61,6 +68,10 @@ $(GCLOG_TARGET): $(GCLOG_OBJ_FILES)
 	@mkdir -p $(GCLOG_BIN_DIR)
 	@$(CC) -o $@ $^
 
+$(GCTRACE_TARGET): $(GCTRACE_OBJ_FILES)
+	@mkdir -p $(GCTRACE_BIN_DIR)
+	@$(CC) $(TRACE_FLAGS) -o $@ $^
+
 $(DEBUG_OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(DEBUG_OBJ_DIR)
 	@$(CC) -c -I$(INC_DIR) $(filter-out -Werror -D_FORTIFY_SOURCE=2,$(CFLAGS)) $(DEBUG_FLAGS) -o $@ $<
@@ -76,6 +87,10 @@ $(GC_OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 $(GCLOG_OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(GCLOG_OBJ_DIR)
 	@$(CC) -c -I$(INC_DIR) $(CFLAGS) $(GC_FLAGS) $(GCLOG_FLAGS) -o $@ $<
+
+$(GCTRACE_OBJ_DIR)/%.o: $(SRC_DIR)/%.c
+	@mkdir -p $(GCTRACE_OBJ_DIR)
+	@$(CC) -c -I$(INC_DIR) $(filter-out -Werror,$(CFLAGS)) $(GC_FLAGS) $(GCLOG_FLAGS) $(TRACE_FLAGS) -o $@ $<
 
 $(TEST_OBJ_DIR)/%.o: $(TEST_SRC_DIR)/%.c
 	@mkdir -p $(TEST_OBJ_DIR)
@@ -97,20 +112,33 @@ gc-tests: $(GC_TARGET)
 gc-run: $(GCLOG_TARGET)
 	@./$< $(inputfile)
 
-# The same run, captured to a file. stdout is block-buffered whenever it is
-# not a terminal, so redirecting gc-run loses the entire buffer when the
+# The same binary with DEBUG_PRINT_CODE and DEBUG_TRACE_EXECUTION as well, so
+# each collection can be placed in the instruction stream around it. Built with
+# -g -O0 into gctrace/, and without -Werror, matching the debug build.
+gc-trace: $(GCTRACE_TARGET)
+	@./$< $(inputfile)
+
+# Capture a run to a file. stdout is block-buffered whenever it is not a
+# terminal, so redirecting these targets loses the entire buffer when the
 # program crashes -- which is exactly when the log is worth reading. stdbuf
 # turns buffering off so every line printed before the crash survives.
+define capture_log
+@mkdir -p $(dir $(logfile))
+@if command -v stdbuf > /dev/null 2>&1; then \
+	stdbuf -o0 ./$(1) $(inputfile) > $(logfile) 2>&1; \
+else \
+	echo "warning: stdbuf not found; a crash will truncate $(logfile)" >&2; \
+	./$(1) $(inputfile) > $(logfile) 2>&1; \
+fi; \
+status=$$?; \
+echo "$(logfile): $$(wc -l < $(logfile) | tr -d ' ') lines, exit $$status"
+endef
+
 gc-log: $(GCLOG_TARGET)
-	@mkdir -p $(dir $(logfile))
-	@if command -v stdbuf > /dev/null 2>&1; then \
-		stdbuf -o0 ./$< $(inputfile) > $(logfile) 2>&1; \
-	else \
-		echo "warning: stdbuf not found; a crash will truncate $(logfile)" >&2; \
-		./$< $(inputfile) > $(logfile) 2>&1; \
-	fi; \
-	status=$$?; \
-	echo "$(logfile): $$(wc -l < $(logfile) | tr -d ' ') lines, exit $$status"
+	$(call capture_log,$(GCLOG_TARGET))
+
+gc-trace-log: $(GCTRACE_TARGET)
+	$(call capture_log,$(GCTRACE_TARGET))
 
 debug: $(DEBUG_TARGET)
 	@sh -c 'if [ "$$(uname -s)" = Darwin ]; then exec xcrun lldb "$$1"; else exec lldb "$$1"; fi' sh "$<"
@@ -124,7 +152,7 @@ repl: $(TARGET)
 clean:
 	@rm -rf $(BIN_DIR) $(OBJ_DIR) $(TEST_OBJ_DIR) $(TEST_BIN_DIR) \
 		$(DEBUG_OBJ_DIR) $(DEBUG_BIN_DIR) $(GC_OBJ_DIR) $(GC_BIN_DIR) \
-		$(GCLOG_OBJ_DIR) $(GCLOG_BIN_DIR)
+		$(GCLOG_OBJ_DIR) $(GCLOG_BIN_DIR) $(GCTRACE_OBJ_DIR) $(GCTRACE_BIN_DIR)
 
-.PHONY: all run clean test tests gc-tests gc-run gc-log repl debug
+.PHONY: all run clean test tests gc-tests gc-run gc-log gc-trace gc-trace-log repl debug
 
