@@ -13,8 +13,8 @@
 #define GC_HEAP_GROW_FACTOR 2
 
 void *reallocate(void *pointer, size_t oldSize, size_t newSize) {
+  vm.bytesAllocated += newSize - oldSize;
   if (newSize > oldSize) {
-    vm.bytesAllocated += newSize - oldSize;
 #ifdef DEBUG_STRESS_GC
     collectGarbage();
 #endif // DEBUG_STRESS_GC
