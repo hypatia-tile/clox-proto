@@ -27,7 +27,9 @@ make repl       # build and start the REPL
 make clean      # remove all build artifacts
 ```
 
-The release build compiles with `-Wall -Wextra -Werror -std=c11`.
+The release build compiles with `-Wall -Wextra -Wunreachable-code -Werror
+-std=c11`. `-Wunreachable-code` is in neither `-Wall` nor `-Wextra`, and it is
+what turns a statement stranded after a `return` into a build failure.
 
 ## Testing
 
