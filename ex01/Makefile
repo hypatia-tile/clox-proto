@@ -1,5 +1,8 @@
 CC = clang
-CFLAGS = -Wall -Wextra -Werror -std=c11
+# -Wunreachable-code is in neither -Wall nor -Wextra, and it is what catches a
+# statement stranded after a return -- the shape a push/pop pair takes when the
+# pop lands on the wrong side of it.
+CFLAGS = -Wall -Wextra -Wunreachable-code -Werror -std=c11
 DEBUG_FLAGS = -g -O0 -DDEBUG_PRINT_CODE -DDEBUG_TRACE_EXECUTION
 # Collect on every allocation. Kept apart from GCLOG_FLAGS so that gc-tests can
 # stress the collector without GC log lines landing in the expected output.
