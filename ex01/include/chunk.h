@@ -4,6 +4,11 @@
 #include "common.h"
 #include "value.h"
 
+/**
+ * @brief The opcodes the VM executes.
+ *
+ * Each instruction is one opcode byte, followed by its operand bytes, if any.
+ */
 typedef enum {
   OP_CONSTANT,
   OP_NIL,
@@ -36,12 +41,28 @@ typedef enum {
   OP_RETURN,
 } OpCode;
 
+/**
+ * @brief Holds a dynamic array of bytecode, line numbers, and constants.
+ *
+ * Represents a raw sequence of bytecode as a dynamic array @ref code. Roughly
+ * speaking, a program consists of instruction sequences and corresponding
+ * constant pools. A constant pool @ref constants is also a dynamic array. An
+ * instruction may have an operand that is an index into @ref constants, so that
+ * the virtual machine can find the constant it uses. For the sake of
+ * traceability, a chunk also has line information @ref lines: for each byte
+ * offset in @ref code, @ref lines holds the source line it came from. Hence
+ * @ref code and @ref lines have the same length.
+ */
 typedef struct {
-  int count;
-  int capacity;
-  uint8_t *code;
-  int *lines;
-  ValueArray constants;
+  int count;     ///< Number of bytes currently used in @ref code and
+                 ///< @ref lines.
+  int capacity;  ///< Allocated capacity of @ref code and @ref lines.
+  uint8_t *code; ///< Dynamic array holding the bytecode: opcodes and their
+                 ///< operands.
+  int *lines;    ///< Dynamic array mapping each byte offset to its source line
+                 ///< number, used for debugging and error reporting.
+  ValueArray constants; ///< Constant pool: values that instructions refer to by
+                        ///< index (literals, global names, functions).
 } Chunk;
 
 void initChunk(Chunk *chunk);

@@ -31,12 +31,21 @@ struct Obj {
   struct Obj *next;
 };
 
+/**
+ * @brief A compiled function.
+ *
+ * The top-level code is compiled into a function too; it has no name and is
+ * printed as `<script>`. An ObjFunction is created only at compile time. While
+ * compiling a function, the compiler may compile another function, and stores a
+ * pointer to it in the constant pool of the enclosing function's chunk.
+ */
 typedef struct {
-  Obj obj;
-  int arity;
-  int upvalueCount;
-  Chunk chunk;
-  ObjString *name;
+  Obj obj;          ///< Common header for every object. See @ref Obj.
+  int arity;        ///< Number of parameters the function takes.
+  int upvalueCount; ///< Number of variables from enclosing functions that this
+                    ///< function captures.
+  Chunk chunk;      ///< Instructions and constants. See @ref Chunk.
+  ObjString *name;  ///< Function's name, or NULL for the top-level script.
 } ObjFunction;
 
 typedef Value (*NativeFn)(int argCount, Value *args);
@@ -63,7 +72,7 @@ typedef struct ObjUpvalue {
 typedef struct {
   Obj obj;
   ObjFunction *function;
-  ObjUpvalue** upvalues;
+  ObjUpvalue **upvalues;
   int upvalueCount;
 } ObjClosure;
 
